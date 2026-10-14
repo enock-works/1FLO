@@ -349,6 +349,8 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const REQUEST_TIMEOUT_MS = 8000;
   const SUPABASE_URL = 'https://aqimvwpeziazbwdrcprt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xg4qkkxK5EpqteFU9xJ4QQ_ExlySn1i';
+  // Chave pública da YouTube Data API v3, restringida ao domínio do 1FLŌ.
+  const YOUTUBE_DATA_API_KEY = 'AIzaSyDbTzVKoJBTkJZggfzi-yi2cCaK7AA5mZ0';
   const SYNC_TABLE='user_libraries', LOCAL_MODIFIED_KEY='musicflow_library_modified_v1';
   const $ = id => document.getElementById(id);
   const state = { tracks: [], currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
@@ -536,7 +538,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   function sanitizeTracks(list) {
     return list.filter(t => t && ((typeof t.videoId === 'string' && /^[\w-]{11}$/.test(t.videoId)) || (typeof t.playlistId === 'string' && /^[\w-]+$/.test(t.playlistId))))
-          .map(t => ({...(t.videoId ? {videoId:t.videoId} : {}), ...(t.playlistId ? {playlistId:t.playlistId} : {}), ...(t.favorite ? {favorite:true} : {}), ...(t.autoTitle ? {autoTitle:true} : {}), ...(Array.isArray(t.items) ? {items:t.items.filter(x=>x&&typeof x.videoId==='string'&&/^[\w-]{11}$/.test(x.videoId)).map(x=>({videoId:x.videoId,title:String(x.title||'Faixa').slice(0,160),artist:String(x.artist||'').slice(0,120)}))} : {}), title:String(t.title || (t.playlistId ? 'Playlist do YouTube' : 'Sem título')).slice(0,160), artist:String(t.artist || (t.playlistId ? 'Álbum do YouTube' : 'Artista desconhecido')).slice(0,120)}));
+          .map(t => ({...(t.videoId ? {videoId:t.videoId} : {}), ...(t.playlistId ? {playlistId:t.playlistId} : {}), ...(t.favorite ? {favorite:true} : {}), ...(t.autoTitle ? {autoTitle:true} : {}), ...(t.metadataSource ? {metadataSource:String(t.metadataSource).slice(0,80)} : {}), ...(Array.isArray(t.items) ? {items:t.items.filter(x=>x&&typeof x.videoId==='string'&&/^[\w-]{11}$/.test(x.videoId)).map(x=>({videoId:x.videoId,title:String(x.title||'Faixa').slice(0,160),artist:String(x.artist||'').slice(0,120)}))} : {}), title:String(t.title || (t.playlistId ? 'Playlist do YouTube' : 'Sem título')).slice(0,160), artist:String(t.artist || (t.playlistId ? 'Álbum do YouTube' : 'Artista desconhecido')).slice(0,120)}));
   }
   function loadState() {
     let raw = null;
@@ -805,45 +807,57 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if (item.videoId && (!title || !artist)) enrichLibrary();
     if (state.currentTrack===-1) setStatus('Escolhe uma música para começar.');
   }
+  function youtubeDataApiConfigured() {
+    return YOUTUBE_DATA_API_KEY && !YOUTUBE_DATA_API_KEY.startsWith('PASTE_');
+  }
+  function cleanPlaylistArtist(value) {
+    return cleanArtist(String(value || '').replace(/\s*-\s*Topic$/i, '')).slice(0,120);
+  }
   async function fetchPlaylistTitle(playlistId, entry) {
     const playlistUrl='https://www.youtube.com/playlist?list='+encodeURIComponent(playlistId);
     const decode=(value)=>{const el=document.createElement('textarea');el.innerHTML=String(value||'');return el.value.replace(/\s+-\s+YouTube$/i,'').replace(/^YouTube\s*[-:]\s*/i,'').trim();};
-    const applyTitle=(rawTitle, author='')=>{
-      const title=decode(rawTitle);
+    const applyMetadata=(rawTitle, rawArtist='', source='')=>{
+      const title=decode(rawTitle), artist=cleanPlaylistArtist(decode(rawArtist));
       if(!entry.autoTitle || !title || /^youtube$/i.test(title) || title.length<2) return false;
       entry.title=title.slice(0,160);
-      if(author) entry.artist=decode(author).slice(0,120);
-      entry.autoTitle=false; saveState(); render(); return true;
+      if(artist) entry.artist=artist;
+      entry.autoTitle=false;
+      if(source) entry.metadataSource=source;
+      saveState(); render();
+      toast('Título e artista confirmados pelo YouTube.');
+      return true;
     };
-    // noembed nem sempre suporta links de playlists, mas vale a primeira tentativa.
-    try {
-      const response=await fetchWithTimeout('https://noembed.com/embed?url='+encodeURIComponent(playlistUrl),{headers:{'Accept':'application/json'}});
-      if(response.ok){const data=await response.json();if(applyTitle(data?.title,data?.author_name))return;}
-    } catch(e) {}
-    // Tentar diferentes proxies CORS; extrair o nome da playlist, não o título da primeira faixa.
-    const proxies=[
-      'https://api.allorigins.win/raw?url='+encodeURIComponent(playlistUrl),
-      'https://corsproxy.io/?url='+encodeURIComponent(playlistUrl)
-    ];
-    for(const proxy of proxies){
-      try{
-        const response=await fetchWithTimeout(proxy); if(!response.ok)continue;
-        const html=await response.text();
-        const clean=html.replace(/\\u0026/g,'&').replace(/\\\"/g,'"');
-        const readMeta=(key)=>{
-          const patterns=[new RegExp(`<meta[^>]+(?:property|name)=[\"']${key}[\"'][^>]+content=[\"']([^\"']+)`,'i'),new RegExp(`<meta[^>]+content=[\"']([^\"']+)[\"'][^>]+(?:property|name)=[\"']${key}[\"']`,'i')];
-          for(const re of patterns){const m=clean.match(re);if(m)return m[1];}return '';
-        };
-        let title='';
-        const dataMatch=clean.match(/"playlistMetadataRenderer"\s*:\s*\{[\s\S]*?"title"\s*:\s*(\{[\s\S]*?\})/);
-        if(dataMatch){try{const obj=JSON.parse(dataMatch[1]);title=obj.simpleText||(obj.runs||[]).map(x=>x.text||'').join('');}catch(e){}}
-        title=title||readMeta('og:title')||readMeta('twitter:title')||((clean.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||'');
-        const author=readMeta('og:video:tag')||readMeta('twitter:creator')||'';
-        if(applyTitle(title,author))return;
-      }catch(e){}
+
+    // Fonte principal: YouTube Data API v3. Devolve os metadados da própria playlist.
+    if(youtubeDataApiConfigured()) {
+      try {
+        const api=new URL('https://www.googleapis.com/youtube/v3/playlists');
+        api.searchParams.set('part','snippet,contentDetails');
+        api.searchParams.set('id',playlistId);
+        api.searchParams.set('key',YOUTUBE_DATA_API_KEY);
+        const response=await fetchWithTimeout(api.toString());
+        const data=await response.json().catch(()=>({}));
+        if(response.ok && data.items?.[0]) {
+          const playlist=data.items[0], snippet=playlist.snippet||{};
+          if(applyMetadata(snippet.localized?.title||snippet.title, snippet.videoOwnerChannelTitle||snippet.channelTitle, 'YouTube Data API')) return;
+        }
+      } catch(e) {}
     }
-    // Não inventar o nome nem substituir pelo nome da primeira faixa: manter indicação para nova tentativa.
-    if(entry.autoTitle){entry.title='Nome da playlist indisponível';entry.artist='Podes editar o título manualmente';saveState();render();}
+
+    // Fallback: oEmbed. Nem todas as playlists são suportadas.
+    try {
+      const response=await fetchWithTimeout('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(playlistUrl));
+      if(response.ok){const data=await response.json();if(applyMetadata(data?.title,data?.author_name,'YouTube oEmbed'))return;}
+    } catch(e) {}
+
+    // Manter um estado neutro; nunca substituir por mensagens de erro como título/artista.
+    if(entry.autoTitle) {
+      entry.title='Playlist do YouTube';
+      entry.artist=entry.artist && entry.artist!=='Playlist' ? entry.artist : 'Artista por identificar';
+      saveState();render();
+      if(!youtubeDataApiConfigured()) toast('Para obter o título do álbum, configura a chave da YouTube Data API.');
+      else toast('O YouTube não devolveu os metadados desta playlist.');
+    }
   }
   function syncPlayingVideoMetadata() {
     const t=currentTrack(); if(!t || !playerReady || !player || !player.getVideoData) return;
