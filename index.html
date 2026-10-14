@@ -31,6 +31,82 @@
   --rose:#D44768; --rose-2:#A65A72;                 /* FAB, guardar, realces */
   --soft:#C4AAB5; --soft-text:#E0CCD4; --faint:#B9A5AE;
 }
+   /* Garante que os controlos da sessão não aparecem antes do login */
+[hidden] {
+  display: none !important;
+}
+
+/* Campos de autenticação */
+.auth-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.auth-fields input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Botões Entrar e Criar conta */
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* Ação principal */
+.auth-login {
+  background: linear-gradient(110deg, var(--rose), var(--rose-2));
+  border-color: transparent;
+  color: #FFF8FA;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(212, 71, 104, 0.18);
+}
+
+/* Ação secundária */
+.auth-signup {
+  background: transparent;
+  border-color: var(--modal-line);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.auth-signup:hover,
+.auth-signup:focus-visible {
+  color: var(--soft-text);
+  border-color: var(--line);
+}
+
+/* Controlos apresentados depois do login */
+#signedInControls {
+  align-items: center;
+  gap: 10px;
+}
+
+#signedInControls #accountEmail {
+  margin-right: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Telemóvel */
+@media (max-width: 560px) {
+  .auth-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-actions {
+    width: 100%;
+  }
+
+  .auth-actions .filter-btn {
+    flex: 1;
+  }
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:radial-gradient(ellipse at 85% 0%,rgba(180,92,255,.16),transparent 35%),var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100dvh;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 button,input{font:inherit}button{cursor:pointer}
