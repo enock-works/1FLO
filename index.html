@@ -180,8 +180,14 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   <p class="sub">Guarda os teus links do YouTube e organiza uma playlist pessoal.</p>
   <section class="sync-panel" aria-label="Conta e sincronização">
     <div id="signedOutControls">
-      <div class="sync-row"><input id="syncEmail" type="email" autocomplete="email" placeholder="O teu e-mail para sincronizar"><button class="filter-btn" id="signInBtn" type="button">Enviar código</button></div>
-      <div class="sync-row" id="otpControls" hidden style="margin-top:9px"><input id="syncOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos"><button class="filter-btn" id="verifyOtpBtn" type="button">Confirmar código</button></div>
+      <div class="sync-row">
+        <input id="syncEmail" type="email" autocomplete="username" placeholder="E-mail" aria-label="E-mail">
+        <input id="syncPassword" type="password" autocomplete="current-password" minlength="8" placeholder="Password" aria-label="Password">
+      </div>
+      <div class="sync-row" style="margin-top:9px">
+        <button class="filter-btn" id="signInBtn" type="button">Entrar</button>
+        <button class="filter-btn" id="signUpBtn" type="button">Criar conta</button>
+      </div>
     </div>
     <div class="sync-row" id="signedInControls" hidden><strong id="accountEmail"></strong><button class="filter-btn" id="syncNowBtn" type="button">Sincronizar agora</button><button class="filter-btn" id="signOutBtn" type="button">Terminar sessão</button></div>
     <div class="sync-state" id="syncState" role="status">Modo local: inicia sessão para sincronizar entre aparelhos.</div>
@@ -875,24 +881,28 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     setSyncState('Bibliotecas combinadas e sincronizadas.','ok');
   }
   async function initCloudSync(){updateAccountUI();if(!cloudConfigured())return;try{const m=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');cloud=m.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data}=await cloud.auth.getSession();authUser=data.session?.user||null;updateAccountUI();cloud.auth.onAuthStateChange((_e,x)=>{authUser=x?.user||null;updateAccountUI();if(authUser)setTimeout(reconcileLibrary,0)});if(authUser)await reconcileLibrary()}catch(e){setSyncState('Não foi possível iniciar a sincronização.','warn')}}
-  async function signIn(){
-    if(!cloud){setSyncState('Configura o Supabase no ficheiro antes de iniciar sessão.','warn');return}
-    const email=$('syncEmail').value.trim();
-    if(!/^\S+@\S+\.\S+$/.test(email)){toast('Introduz um e-mail válido.');return}
-    const {error}=await cloud.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
-    if(error){setSyncState('Não foi possível enviar o código.','warn');return}
-    $('otpControls').hidden=false;$('syncOtp').focus();
-    setSyncState('Código enviado. Introduz aqui os 6 dígitos recebidos por e-mail.','ok');
+  function readPasswordCredentials(){
+    const email=$('syncEmail').value.trim().toLowerCase(),password=$('syncPassword').value;
+    if(!/^\S+@\S+\.\S+$/.test(email)){toast('Introduz um e-mail válido.');$('syncEmail').focus();return null}
+    if(password.length<8){toast('A password deve ter pelo menos 8 caracteres.');$('syncPassword').focus();return null}
+    return {email,password};
   }
-  async function verifyEmailOtp(){
-    if(!cloud)return;
-    const email=$('syncEmail').value.trim(),token=$('syncOtp').value.replace(/\D/g,'');
-    if(!/^\d{6}$/.test(token)){toast('Introduz o código de 6 dígitos.');return}
-    setSyncState('A confirmar o código…');
-    const {data,error}=await cloud.auth.verifyOtp({email,token,type:'email'});
-    if(error||!data?.session){setSyncState('Código inválido ou expirado. Pede um novo código.','warn');return}
-    authUser=data.user;$('otpControls').hidden=true;updateAccountUI();
-    await reconcileLibrary();
+  async function signIn(){
+    if(!cloud){setSyncState('O serviço de autenticação ainda não está disponível.','warn');return}
+    const credentials=readPasswordCredentials();if(!credentials)return;
+    setSyncState('A iniciar sessão…');
+    const {data,error}=await cloud.auth.signInWithPassword(credentials);
+    if(error||!data?.session){setSyncState('E-mail ou password incorretos.','warn');return}
+    authUser=data.user;updateAccountUI();await reconcileLibrary();
+  }
+  async function signUp(){
+    if(!cloud){setSyncState('O serviço de autenticação ainda não está disponível.','warn');return}
+    const credentials=readPasswordCredentials();if(!credentials)return;
+    setSyncState('A criar a conta…');
+    const {data,error}=await cloud.auth.signUp(credentials);
+    if(error){setSyncState(error.message||'Não foi possível criar a conta.','warn');return}
+    if(!data?.session){setSyncState('A conta foi criada, mas o Supabase ainda exige confirmação de e-mail. Desativa Confirm Email no provider Email.','warn');return}
+    authUser=data.user;updateAccountUI();await reconcileLibrary();
   }
   async function signOut(){if(cloud)await cloud.auth.signOut();authUser=null;updateAccountUI()}
   window.addEventListener('online',()=>{if(authUser)reconcileLibrary()});
@@ -919,7 +929,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   restorePending = true; loadState(); render(); renderQueue(); setupMediaSession(); initYouTube(); enrichLibrary();
   checkBackup(); ensureFirstSeen(); updateStorageInfo();
   $('linkBtn').addEventListener('click', shareRestoreLink);
-  $('signInBtn').addEventListener('click',signIn);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('verifyOtpBtn').addEventListener('click',verifyEmailOtp);$('syncOtp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,6)});$('syncOtp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyEmailOtp()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
+  $('signInBtn').addEventListener('click',signIn);$('signUpBtn').addEventListener('click',signUp);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('syncPassword').focus()});$('syncPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
   let wvDismissed = false; try { wvDismissed = !!sessionStorage.getItem('1flo_wv_dismissed'); } catch(e) {}
   if (inAppBrowser() && !wvDismissed) $('webviewWarn').classList.add('show');
   $('webviewDismissBtn').addEventListener('click', () => { $('webviewWarn').classList.remove('show'); try { sessionStorage.setItem('1flo_wv_dismissed', '1'); } catch(e) {} });
