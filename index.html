@@ -46,6 +46,34 @@
 .auth-fields input {
   width: 100%;
   min-width: 0;
+  min-height: 48px;
+  padding: 13px 14px;
+  border: 1px solid var(--modal-line);
+  border-radius: 12px;
+  background: #140D16;
+  color: var(--text);
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 2px 8px rgba(0,0,0,.14);
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.auth-fields input::placeholder {
+  color: #907F8D;
+}
+
+.auth-fields input:focus {
+  background: #171019;
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(212,71,104,.16), 0 2px 8px rgba(0,0,0,.18);
+}
+
+.auth-fields input:-webkit-autofill,
+.auth-fields input:-webkit-autofill:hover,
+.auth-fields input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px #140D16 inset;
+  caret-color: var(--text);
+  border-color: var(--modal-line);
 }
 
 /* Botões Entrar e Criar conta */
@@ -956,7 +984,54 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     await pushLibrary();
     setSyncState('Bibliotecas combinadas e sincronizadas.','ok');
   }
-  async function initCloudSync(){updateAccountUI();if(!cloudConfigured())return;try{const m=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');cloud=m.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data}=await cloud.auth.getSession();authUser=data.session?.user||null;updateAccountUI();cloud.auth.onAuthStateChange((_e,x)=>{authUser=x?.user||null;updateAccountUI();if(authUser)setTimeout(reconcileLibrary,0)});if(authUser)await reconcileLibrary()}catch(e){setSyncState('Não foi possível iniciar a sincronização.','warn')}}
+  function loadExternalScript(src){
+    return new Promise((resolve,reject)=>{
+      const existing=[...document.scripts].find(script=>script.src===src);
+      if(existing){
+        if(window.supabase?.createClient){resolve();return}
+        existing.addEventListener('load',resolve,{once:true});
+        existing.addEventListener('error',reject,{once:true});
+        return;
+      }
+      const script=document.createElement('script');
+      script.src=src;script.async=true;script.crossOrigin='anonymous';
+      script.onload=resolve;script.onerror=()=>reject(new Error('Falha ao carregar '+src));
+      document.head.appendChild(script);
+    });
+  }
+  async function loadSupabaseSdk(){
+    if(window.supabase?.createClient)return window.supabase;
+    const sources=[
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
+      'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js'
+    ];
+    for(const source of sources){
+      try{await loadExternalScript(source);if(window.supabase?.createClient)return window.supabase}catch(e){}
+    }
+    throw new Error('Não foi possível carregar o cliente Supabase.');
+  }
+  async function initCloudSync(){
+    updateAccountUI();
+    if(!cloudConfigured())return;
+    try{
+      const sdk=await loadSupabaseSdk();
+      cloud=sdk.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      const {data,error}=await cloud.auth.getSession();
+      if(error)throw error;
+      authUser=data.session?.user||null;
+      updateAccountUI();
+      cloud.auth.onAuthStateChange((_event,session)=>{
+        authUser=session?.user||null;
+        updateAccountUI();
+        if(authUser)setTimeout(reconcileLibrary,0);
+      });
+      if(authUser)await reconcileLibrary();
+    }catch(error){
+      console.error('Falha ao iniciar Supabase:',error);
+      cloud=null;authUser=null;updateAccountUI();
+      setSyncState('Modo local. A sincronização será tentada novamente quando iniciares sessão.','warn');
+    }
+  }
   function readPasswordCredentials(){
     const email=$('syncEmail').value.trim().toLowerCase(),password=$('syncPassword').value;
     if(!/^\S+@\S+\.\S+$/.test(email)){toast('Introduz um e-mail válido.');$('syncEmail').focus();return null}
