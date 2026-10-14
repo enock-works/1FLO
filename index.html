@@ -6,12 +6,10 @@
 <meta name="theme-color" content="#100B18">
 <meta name="application-name" content="1FLŌ">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="icon" type="image/svg+xml" href="./favicon.svg?v=4">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=4">
-<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=4">
-<link rel="shortcut icon" type="image/x-icon" href="./favicon.ico?v=4">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=4">
-<link rel="manifest" href="./manifest.webmanifest?v=4">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="1FLŌ">
@@ -181,7 +179,10 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   <h1>A tua biblioteca</h1>
   <p class="sub">Guarda os teus links do YouTube e organiza uma playlist pessoal.</p>
   <section class="sync-panel" aria-label="Conta e sincronização">
-    <div class="sync-row" id="signedOutControls"><input id="syncEmail" type="email" autocomplete="email" placeholder="O teu e-mail para sincronizar"><button class="filter-btn" id="signInBtn" type="button">Entrar por e-mail</button></div>
+    <div id="signedOutControls">
+      <div class="sync-row"><input id="syncEmail" type="email" autocomplete="email" placeholder="O teu e-mail para sincronizar"><button class="filter-btn" id="signInBtn" type="button">Enviar código</button></div>
+      <div class="sync-row" id="otpControls" hidden style="margin-top:9px"><input id="syncOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código de 6 dígitos"><button class="filter-btn" id="verifyOtpBtn" type="button">Confirmar código</button></div>
+    </div>
     <div class="sync-row" id="signedInControls" hidden><strong id="accountEmail"></strong><button class="filter-btn" id="syncNowBtn" type="button">Sincronizar agora</button><button class="filter-btn" id="signOutBtn" type="button">Terminar sessão</button></div>
     <div class="sync-state" id="syncState" role="status">Modo local: inicia sessão para sincronizar entre aparelhos.</div>
   </section>
@@ -847,10 +848,56 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   function updateAccountUI(){$('signedOutControls').hidden=!!authUser;$('signedInControls').hidden=!authUser;$('accountEmail').textContent=authUser?.email||'';if(!cloudConfigured())setSyncState('Sincronização ainda não configurada. A biblioteca continua guardada localmente.','warn');else if(!authUser)setSyncState('Modo local: inicia sessão para sincronizar entre aparelhos.')}
   function scheduleCloudSync(){if(!cloud||!authUser||syncing)return;clearTimeout(syncTimer);syncTimer=setTimeout(pushLibrary,900)}
   async function pushLibrary(){if(!cloud||!authUser||syncing)return;syncing=true;setSyncState('A sincronizar…');const modified=localStorage.getItem(LOCAL_MODIFIED_KEY)||new Date().toISOString();const {error}=await cloud.from(SYNC_TABLE).upsert({user_id:authUser.id,library:{tracks:state.tracks},client_modified_at:modified},{onConflict:'user_id'});syncing=false;setSyncState(error?'Falha de sincronização. Os dados locais foram mantidos.':'Biblioteca sincronizada.',error?'warn':'ok')}
-  async function reconcileLibrary(){if(!cloud||!authUser)return;syncing=true;setSyncState('A comparar bibliotecas…');const {data,error}=await cloud.from(SYNC_TABLE).select('library,client_modified_at,updated_at').eq('user_id',authUser.id).maybeSingle();if(error){syncing=false;setSyncState('Não foi possível consultar a biblioteca remota.','warn');return}const lm=Date.parse(localStorage.getItem(LOCAL_MODIFIED_KEY)||'')||0,rm=Date.parse(data?.client_modified_at||data?.updated_at||'')||0;if(data?.library?.tracks&&rm>lm){state.tracks=sanitizeTracks(data.library.tracks);state.currentTrack=-1;lastLibrarySnapshot=serializedLibrary();localStorage.setItem(LOCAL_MODIFIED_KEY,new Date(rm).toISOString());lastSavedSnapshot='';saveState();render();renderQueue();syncing=false;setSyncState('Biblioteca atualizada a partir da conta.','ok');return}syncing=false;await pushLibrary()}
+  function trackKey(t){return t?.playlistId?'p:'+t.playlistId:t?.videoId?'v:'+t.videoId:''}
+  function mergeLibraries(localTracks,remoteTracks){
+    const merged=new Map();
+    sanitizeTracks(remoteTracks||[]).forEach(t=>{const k=trackKey(t);if(k)merged.set(k,t)});
+    sanitizeTracks(localTracks||[]).forEach(t=>{
+      const k=trackKey(t);if(!k)return;
+      const remote=merged.get(k);
+      if(!remote){merged.set(k,t);return}
+      merged.set(k,{...remote,...t,favorite:!!(remote.favorite||t.favorite),items:(t.items?.length?t.items:remote.items)});
+    });
+    return [...merged.values()];
+  }
+  async function reconcileLibrary(){
+    if(!cloud||!authUser||syncing)return;
+    syncing=true;setSyncState('A comparar bibliotecas…');
+    const {data,error}=await cloud.from(SYNC_TABLE).select('library,client_modified_at,updated_at').eq('user_id',authUser.id).maybeSingle();
+    if(error){syncing=false;setSyncState('Não foi possível consultar a biblioteca remota.','warn');return}
+    const remoteTracks=Array.isArray(data?.library?.tracks)?data.library.tracks:[];
+    const merged=mergeLibraries(state.tracks,remoteTracks);
+    const changed=JSON.stringify(merged)!==JSON.stringify(state.tracks);
+    state.tracks=merged;
+    if(changed){state.currentTrack=-1;lastLibrarySnapshot=serializedLibrary();lastSavedSnapshot='';try{localStorage.setItem(LOCAL_MODIFIED_KEY,new Date().toISOString())}catch(e){}saveState();render();renderQueue()}
+    syncing=false;
+    await pushLibrary();
+    setSyncState('Bibliotecas combinadas e sincronizadas.','ok');
+  }
   async function initCloudSync(){updateAccountUI();if(!cloudConfigured())return;try{const m=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');cloud=m.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data}=await cloud.auth.getSession();authUser=data.session?.user||null;updateAccountUI();cloud.auth.onAuthStateChange((_e,x)=>{authUser=x?.user||null;updateAccountUI();if(authUser)setTimeout(reconcileLibrary,0)});if(authUser)await reconcileLibrary()}catch(e){setSyncState('Não foi possível iniciar a sincronização.','warn')}}
-  async function signIn(){if(!cloud){setSyncState('Configura o Supabase no ficheiro antes de iniciar sessão.','warn');return}const email=$('syncEmail').value.trim();if(!/^\S+@\S+\.\S+$/.test(email)){toast('Introduz um e-mail válido.');return}const redirectTo=/^https?:$/.test(location.protocol)?location.href.split('#')[0]:undefined;const {error}=await cloud.auth.signInWithOtp({email,options:redirectTo?{emailRedirectTo:redirectTo}:undefined});setSyncState(error?'Não foi possível enviar o link.':'Link de acesso enviado por e-mail.',error?'warn':'ok')}
+  async function signIn(){
+    if(!cloud){setSyncState('Configura o Supabase no ficheiro antes de iniciar sessão.','warn');return}
+    const email=$('syncEmail').value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)){toast('Introduz um e-mail válido.');return}
+    const {error}=await cloud.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+    if(error){setSyncState('Não foi possível enviar o código.','warn');return}
+    $('otpControls').hidden=false;$('syncOtp').focus();
+    setSyncState('Código enviado. Introduz aqui os 6 dígitos recebidos por e-mail.','ok');
+  }
+  async function verifyEmailOtp(){
+    if(!cloud)return;
+    const email=$('syncEmail').value.trim(),token=$('syncOtp').value.replace(/\D/g,'');
+    if(!/^\d{6}$/.test(token)){toast('Introduz o código de 6 dígitos.');return}
+    setSyncState('A confirmar o código…');
+    const {data,error}=await cloud.auth.verifyOtp({email,token,type:'email'});
+    if(error||!data?.session){setSyncState('Código inválido ou expirado. Pede um novo código.','warn');return}
+    authUser=data.user;$('otpControls').hidden=true;updateAccountUI();
+    await reconcileLibrary();
+  }
   async function signOut(){if(cloud)await cloud.auth.signOut();authUser=null;updateAccountUI()}
+  window.addEventListener('online',()=>{if(authUser)reconcileLibrary()});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&authUser)reconcileLibrary()});
+  setInterval(()=>{if(authUser&&navigator.onLine)reconcileLibrary()},30000);
   $('searchInput').addEventListener('input',e=>{searchTerm=e.target.value;render();});
   $('filterAll').addEventListener('click',()=>{libraryFilter='all';render();});
   $('filterFavorites').addEventListener('click',()=>{libraryFilter='favorites';render();});
@@ -872,7 +919,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   restorePending = true; loadState(); render(); renderQueue(); setupMediaSession(); initYouTube(); enrichLibrary();
   checkBackup(); ensureFirstSeen(); updateStorageInfo();
   $('linkBtn').addEventListener('click', shareRestoreLink);
-  $('signInBtn').addEventListener('click',signIn);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
+  $('signInBtn').addEventListener('click',signIn);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('verifyOtpBtn').addEventListener('click',verifyEmailOtp);$('syncOtp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,6)});$('syncOtp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyEmailOtp()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
   let wvDismissed = false; try { wvDismissed = !!sessionStorage.getItem('1flo_wv_dismissed'); } catch(e) {}
   if (inAppBrowser() && !wvDismissed) $('webviewWarn').classList.add('show');
   $('webviewDismissBtn').addEventListener('click', () => { $('webviewWarn').classList.remove('show'); try { sessionStorage.setItem('1flo_wv_dismissed', '1'); } catch(e) {} });
