@@ -350,7 +350,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const SUPABASE_URL = 'https://aqimvwpeziazbwdrcprt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xg4qkkxK5EpqteFU9xJ4QQ_ExlySn1i';
   // Chave pública da YouTube Data API v3, restringida ao domínio do 1FLŌ.
-  const YOUTUBE_DATA_API_KEY = 'AIzaSyDbTzVKoJBTkJZggfzi-yi2cCaK7AA5mZ0';
+  const YOUTUBE_DATA_API_KEY = 'PASTE_YOUTUBE_DATA_API_KEY_HERE';
   const SYNC_TABLE='user_libraries', LOCAL_MODIFIED_KEY='musicflow_library_modified_v1';
   const $ = id => document.getElementById(id);
   const state = { tracks: [], currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
@@ -513,10 +513,21 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       return d && d.title ? {title:String(d.title).slice(0,160), artist:cleanArtist(d.author_name)} : null;
     } catch(e) { return null; }
   }
+  function normalizeTrackArtist(value) {
+    return cleanArtist(String(value || '')
+      .replace(/\s*-\s*Topic$/i, '')
+      .replace(/\s*VEVO$/i, '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .trim());
+  }
   function artistFromItems(items) {
     const count = new Map();
-    (items || []).forEach(x => { const a = cleanArtist(x.artist); if (a) count.set(a, (count.get(a) || 0) + 1); });
-    let best = '', n = 0; count.forEach((v, k) => { if (v > n) { best = k; n = v; } });
+    (items || []).forEach(x => {
+      const artist = normalizeTrackArtist(x.artist);
+      if (artist) count.set(artist, (count.get(artist) || 0) + 1);
+    });
+    let best = '', n = 0;
+    count.forEach((value, artist) => { if (value > n) { best = artist; n = value; } });
     return best;
   }
   let enriching = false;
@@ -538,7 +549,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   function sanitizeTracks(list) {
     return list.filter(t => t && ((typeof t.videoId === 'string' && /^[\w-]{11}$/.test(t.videoId)) || (typeof t.playlistId === 'string' && /^[\w-]+$/.test(t.playlistId))))
-          .map(t => ({...(t.videoId ? {videoId:t.videoId} : {}), ...(t.playlistId ? {playlistId:t.playlistId} : {}), ...(t.favorite ? {favorite:true} : {}), ...(t.autoTitle ? {autoTitle:true} : {}), ...(t.metadataSource ? {metadataSource:String(t.metadataSource).slice(0,80)} : {}), ...(Array.isArray(t.items) ? {items:t.items.filter(x=>x&&typeof x.videoId==='string'&&/^[\w-]{11}$/.test(x.videoId)).map(x=>({videoId:x.videoId,title:String(x.title||'Faixa').slice(0,160),artist:String(x.artist||'').slice(0,120)}))} : {}), title:String(t.title || (t.playlistId ? 'Playlist do YouTube' : 'Sem título')).slice(0,160), artist:String(t.artist || (t.playlistId ? 'Álbum do YouTube' : 'Artista desconhecido')).slice(0,120)}));
+          .map(t => ({...(t.videoId ? {videoId:t.videoId} : {}), ...(t.playlistId ? {playlistId:t.playlistId} : {}), ...(t.favorite ? {favorite:true} : {}), ...(t.autoTitle ? {autoTitle:true} : {}), ...(t.metadataSource ? {metadataSource:String(t.metadataSource).slice(0,80)} : {}), ...(t.artistSource ? {artistSource:String(t.artistSource).slice(0,80)} : {}), ...(Array.isArray(t.items) ? {items:t.items.filter(x=>x&&typeof x.videoId==='string'&&/^[\w-]{11}$/.test(x.videoId)).map(x=>({videoId:x.videoId,title:String(x.title||'Faixa').slice(0,160),artist:String(x.artist||'').slice(0,120)}))} : {}), title:String(t.title || (t.playlistId ? 'Playlist do YouTube' : 'Sem título')).slice(0,160), artist:String(t.artist || (t.playlistId ? 'Álbum do YouTube' : 'Artista desconhecido')).slice(0,120)}));
   }
   function loadState() {
     let raw = null;
@@ -712,7 +723,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       }
       // Posição = índice real na playlist do YouTube (necessário para playAlbumItem), mesmo com ids repetidos.
       const details=allIds.map((id,index)=>({videoId:id,title:info.get(id)?.title||`Faixa ${index+1}`,artist:info.get(id)?.artist||''}));
-      track.items=details; if (isPlaceholderArtist(track)) { const a=artistFromItems(details); if (a) track.artist=a; }
+      track.items=details;
+      const detectedArtist=artistFromItems(details);
+      if(detectedArtist) {
+        track.artist=detectedArtist;
+        track.artistSource='playlist tracks';
+      }
       saveState(); render(); setStatus(`${details.length} faixas encontradas.`);
       if(track.autoTitle) fetchPlaylistTitle(track.playlistId,track);
     } catch(e) { setStatus('Erro ao carregar as faixas.'); toast('Não foi possível organizar as faixas deste álbum.'); }
@@ -839,7 +855,8 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
         const data=await response.json().catch(()=>({}));
         if(response.ok && data.items?.[0]) {
           const playlist=data.items[0], snippet=playlist.snippet||{};
-          if(applyMetadata(snippet.localized?.title||snippet.title, snippet.videoOwnerChannelTitle||snippet.channelTitle, 'YouTube Data API')) return;
+          // O canal proprietário da playlist não é necessariamente o artista musical.
+          if(applyMetadata(snippet.localized?.title||snippet.title, '', 'YouTube Data API')) return;
         }
       } catch(e) {}
     }
@@ -847,7 +864,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     // Fallback: oEmbed. Nem todas as playlists são suportadas.
     try {
       const response=await fetchWithTimeout('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(playlistUrl));
-      if(response.ok){const data=await response.json();if(applyMetadata(data?.title,data?.author_name,'YouTube oEmbed'))return;}
+      if(response.ok){const data=await response.json();if(applyMetadata(data?.title,'','YouTube oEmbed'))return;}
     } catch(e) {}
 
     // Manter um estado neutro; nunca substituir por mensagens de erro como título/artista.
