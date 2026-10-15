@@ -1,4 +1,4 @@
-const CACHE = '1flo-pwa-v12';
+const CACHE = '1flo-pwa-v14';
 const ASSETS = [
   './',
   './index.html',
