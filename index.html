@@ -225,7 +225,9 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 /* --- Playlists partilhadas --- */
 .shared-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 2px 12px}.shared-head h2{font-size:19px;margin:0}.shared-actions{display:flex;gap:8px;flex-wrap:wrap}.shared-list{display:flex;flex-direction:column;gap:8px}.shared-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:13px 14px;background:var(--surface-3);border:1px solid var(--surface-line);border-radius:16px}.shared-name{font-weight:750}.shared-meta{font-size:12px;color:var(--muted);margin-top:4px}.shared-code{font-family:monospace;letter-spacing:1px;color:var(--cyan)}
 .shared-delete{color:#FF9AAA!important;border-color:#7A3D50!important;background:#2A1520!important}
-.shared-modal{align-items:flex-end}.shared-box{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--modal-line);border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto}.shared-box h2{margin:0 0 8px}.shared-form{display:flex;gap:9px}.shared-form input,.shared-form select{flex:1;min-width:0;background:#140D16;border:1px solid var(--modal-line);border-radius:12px;padding:13px;color:var(--text)}.shared-tracks{display:flex;flex-direction:column;gap:6px;margin-top:14px}.shared-track{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--surface-2)}.shared-track-info{min-width:0;flex:1}.shared-track-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shared-track-artist{font-size:11px;color:var(--muted);margin-top:3px}.shared-note{font-size:12px;color:var(--muted);line-height:1.45;margin:8px 0 14px}
+.shared-modal{align-items:flex-end}.shared-box{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--modal-line);border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto}.shared-box h2{margin:0 0 8px}.shared-form{display:flex;gap:9px}.shared-form input{flex:1;min-width:0;background:#140D16;border:1px solid var(--modal-line);border-radius:12px;padding:13px;color:var(--text)}
+.shared-search-results{display:flex;flex-direction:column;gap:8px;margin-top:12px}.shared-search-result{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px;border:1px solid var(--surface-line);border-radius:13px;background:var(--surface-2)}.shared-search-result img{width:58px;height:58px;object-fit:cover;border-radius:9px}.shared-search-title{font-size:13px;font-weight:750;line-height:1.25}.shared-search-meta{font-size:11px;color:var(--muted);margin-top:4px}.shared-search-result .filter-btn{white-space:nowrap}.shared-track-play{flex-shrink:0}
+@media(max-width:520px){.shared-search-result{grid-template-columns:52px minmax(0,1fr)}.shared-search-result img{width:52px;height:52px}.shared-search-result .filter-btn{grid-column:1/-1;width:100%}}.shared-tracks{display:flex;flex-direction:column;gap:6px;margin-top:14px}.shared-track{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--surface-2)}.shared-track-info{min-width:0;flex:1}.shared-track-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shared-track-artist{font-size:11px;color:var(--muted);margin-top:3px}.shared-note{font-size:12px;color:var(--muted);line-height:1.45;margin:8px 0 14px}
 @media(min-width:600px){.shared-modal{align-items:center}.shared-box{border-radius:24px;padding:25px}}@media(max-width:520px){.shared-head{align-items:flex-start;flex-direction:column}.shared-actions{width:100%}.shared-actions .filter-btn{flex:1}.shared-form{flex-direction:column}.shared-card{grid-template-columns:1fr}.shared-card .filter-btn{width:100%}}
 /* --- Pesquisa direta no YouTube --- */
 .youtube-search-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
@@ -346,12 +348,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   <div class="section-head"><h2>Fila de reprodução</h2><button class="filter-btn" id="clearQueueBtn" type="button">Limpar fila</button></div>
   <section id="queueList" aria-label="Fila de reprodução"></section>
   <div class="shared-head"><h2>Playlists partilhadas</h2><div class="shared-actions"><button class="filter-btn" id="createSharedBtn" type="button">＋ Criar</button><button class="filter-btn" id="joinSharedBtn" type="button">⌁ Aderir por código</button></div></div>
-  <p class="sub" style="margin:0 2px 10px">Cria coleções colaborativas e partilha o código com outros utilizadores do 1FLŌ.</p>
+  <p class="sub" style="margin:0 2px 10px">Cria playlists colaborativas, pesquisa músicas no YouTube e partilha o código com outros utilizadores do 1FLŌ.</p>
   <section class="shared-list" id="sharedPlaylistList"><div class="queue-empty">Inicia sessão para consultar playlists partilhadas.</div></section>
-  <div class="section-head"><h2>Cópia de segurança</h2></div>
-  <p class="sub" style="margin:0 2px 10px">A biblioteca fica guardada só neste navegador. Exporta um ficheiro, ou guarda o <strong>link de restauro</strong> nas Notas, no e-mail ou nos favoritos: se o navegador apagar tudo, basta abrir esse link para recuperar a biblioteca.</p>
+  <div class="section-head"><h2>Cópia e recuperação</h2></div>
+  <p class="sub" style="margin:0 2px 10px">Quando tens sessão iniciada, a biblioteca é sincronizada entre os teus dispositivos. Podes também exportar uma cópia independente para recuperar a biblioteca em caso de eliminação acidental, perda de acesso ou falha de sincronização.</p>
   <p class="sub" id="storageInfo" style="margin:0 2px 10px;font-size:12px"></p>
-  <div class="backup"><button class="filter-btn" id="exportBtn" type="button">⬇ Exportar</button><button class="filter-btn" id="linkBtn" type="button">🔗 Link de restauro</button><button class="filter-btn" id="importBtn" type="button">⬆ Importar</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>
+  <div class="backup"><button class="filter-btn" id="exportBtn" type="button">⬇ Exportar cópia</button><button class="filter-btn" id="importBtn" type="button">⬆ Importar cópia</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>
 
 </main>
 
@@ -370,7 +372,8 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     <div id="sharedCreatePanel" hidden><div class="shared-form"><input id="sharedNameInput" maxlength="80" placeholder="Nome da playlist"><button class="action save" id="confirmCreateSharedBtn" type="button">Criar</button></div></div>
     <div id="sharedJoinPanel" hidden><div class="shared-form"><input id="sharedCodeInput" maxlength="12" placeholder="Código de partilha"><button class="action save" id="confirmJoinSharedBtn" type="button">Aderir</button></div></div>
     <div id="sharedDetailPanel" hidden>
-      <div class="shared-form"><select id="sharedTrackSelect" aria-label="Entrada da biblioteca"></select><button class="action save" id="addToSharedBtn" type="button">Adicionar</button></div>
+      <div class="shared-form"><input id="sharedSongQuery" type="search" autocomplete="off" placeholder="Pesquisar música ou artista no YouTube" aria-label="Pesquisar música ou artista no YouTube"><button class="action save" id="searchSharedSongBtn" type="button">Pesquisar</button></div>
+      <div class="shared-search-results" id="sharedSongResults"></div>
       <div class="shared-tracks" id="sharedTrackList"></div>
       <div class="shared-actions" style="margin-top:14px"><button class="filter-btn" id="copySharedCodeBtn" type="button">Copiar código</button><button class="filter-btn" id="leaveSharedBtn" type="button">Sair da playlist</button><button class="filter-btn shared-delete" id="deleteSharedBtn" type="button">Eliminar playlist</button></div>
     </div>
@@ -1182,15 +1185,15 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     const isOwner=activeShared.owner_id===authUser?.id;
     $('deleteSharedBtn').hidden=!isOwner;
     $('leaveSharedBtn').hidden=isOwner;
-    const select=$('sharedTrackSelect');select.replaceChildren();
-    state.tracks.forEach(track=>{const option=document.createElement('option');option.value=sharedTrackKey(track);option.textContent=`${track.title} · ${track.artist}`;select.appendChild(option)});
-    if(!state.tracks.length){const option=document.createElement('option');option.textContent='A biblioteca está vazia';option.value='';select.appendChild(option)}
+    $('sharedSongResults').replaceChildren();
+    $('sharedSongQuery').value='';
     const list=$('sharedTrackList');list.replaceChildren();
     if(!(activeShared.tracks||[]).length){const e=document.createElement('div');e.className='youtube-empty';e.textContent='Esta playlist partilhada ainda está vazia.';list.appendChild(e);return}
     activeShared.tracks.forEach((track,index)=>{
       const row=document.createElement('div');row.className='shared-track';const info=document.createElement('div');info.className='shared-track-info';
       const title=document.createElement('div');title.className='shared-track-title';title.textContent=track.title;const artist=document.createElement('div');artist.className='shared-track-artist';artist.textContent=track.artist;info.append(title,artist);
-      const remove=document.createElement('button');remove.type='button';remove.className='mini-btn delete';remove.textContent='×';remove.title='Remover';remove.addEventListener('click',()=>removeSharedTrack(index));row.append(info,remove);list.appendChild(row);
+      const play=document.createElement('button');play.type='button';play.className='mini-btn shared-track-play';play.textContent='▶';play.title='Reproduzir';play.setAttribute('aria-label',`Reproduzir ${track.title}`);play.addEventListener('click',()=>playSharedTrack(track));
+      const remove=document.createElement('button');remove.type='button';remove.className='mini-btn delete';remove.textContent='×';remove.title='Remover';remove.addEventListener('click',()=>removeSharedTrack(index));row.append(info,play,remove);list.appendChild(row);
     });
   }
   async function createSharedPlaylist(){
@@ -1221,10 +1224,48 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if(error){toast('Não foi possível atualizar a playlist partilhada.');console.error(error);return false}
     await loadSharedPlaylists();activeShared=sharedPlaylists.find(p=>p.id===activeShared.id)||activeShared;renderSharedDetail();return true;
   }
-  async function addSelectedToShared(){
-    if(!activeShared)return;const key=$('sharedTrackSelect').value,track=state.tracks.find(t=>sharedTrackKey(t)===key);if(!track)return;
-    if((activeShared.tracks||[]).some(t=>sharedTrackKey(t)===key)){toast('A entrada já pertence à playlist partilhada.');return}
-    activeShared.tracks=[...(activeShared.tracks||[]),JSON.parse(JSON.stringify(track))];if(await saveActiveShared())toast('Adicionado à playlist partilhada.');
+  function cleanYouTubeVideoTitle(value){
+    return String(value||'').replace(/\s*[|·]\s*(official( music)? video|official audio|lyrics?|visuali[sz]er).*$/i,'').trim().slice(0,160);
+  }
+  function playSharedTrack(track){
+    if(!track?.videoId)return;
+    if(!playerReady||!player){toast('O leitor do YouTube ainda está a iniciar.');return}
+    try{
+      player.loadVideoById(track.videoId);player.setVolume(state.volume);state.isPlaying=false;
+      $('currentTitle').textContent=track.title||'Música do YouTube';$('currentArtist').textContent=track.artist||'';setArtwork($('currentArt'),thumb(track.videoId));
+      setStatus(`A reproduzir ${track.title||'música partilhada'}…`);
+    }catch(error){toast('Não foi possível reproduzir esta música.');}
+  }
+  async function searchSharedSongs(){
+    if(!activeShared)return;
+    if(!youtubeDataApiConfigured()){toast('Configura primeiro a chave da YouTube Data API.');return}
+    const query=$('sharedSongQuery').value.trim();
+    if(query.length<2){toast('Escreve pelo menos 2 caracteres.');return}
+    const box=$('sharedSongResults');box.replaceChildren();
+    const loading=document.createElement('div');loading.className='youtube-empty';loading.textContent='A pesquisar músicas no YouTube…';box.appendChild(loading);
+    try{
+      const response=await fetchWithTimeout(youtubeApiUrl('search',{part:'snippet',type:'video',videoCategoryId:'10',videoEmbeddable:'true',videoSyndicated:'true',maxResults:12,q:query}));
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data?.error?.message||'Erro da YouTube Data API');
+      const items=(data.items||[]).filter(item=>item.id?.videoId);
+      box.replaceChildren();
+      if(!items.length){const empty=document.createElement('div');empty.className='youtube-empty';empty.textContent='Não foram encontradas músicas reproduzíveis.';box.appendChild(empty);return}
+      items.forEach(item=>{
+        const snippet=item.snippet||{},videoId=item.id.videoId;
+        const track={videoId,title:cleanYouTubeVideoTitle(snippet.title)||'Música do YouTube',artist:normalizeTrackArtist(snippet.channelTitle||'Artista por identificar')};
+        const row=document.createElement('div');row.className='shared-search-result';
+        const image=document.createElement('img');image.alt='';image.loading='lazy';image.src=bestYouTubeThumb(snippet);
+        const info=document.createElement('div');const title=document.createElement('div');title.className='shared-search-title';title.textContent=track.title;const meta=document.createElement('div');meta.className='shared-search-meta';meta.textContent=track.artist;info.append(title,meta);
+        const add=document.createElement('button');add.type='button';add.className='filter-btn';
+        const exists=(activeShared.tracks||[]).some(existing=>existing.videoId===videoId);add.textContent=exists?'Já adicionada':'Adicionar';add.disabled=exists;
+        add.addEventListener('click',async()=>{
+          if((activeShared.tracks||[]).some(existing=>existing.videoId===videoId)){toast('A música já pertence à playlist partilhada.');return}
+          activeShared.tracks=[...(activeShared.tracks||[]),track];
+          if(await saveActiveShared()){toast('Música adicionada à playlist partilhada.');searchSharedSongs()}
+        });
+        row.append(image,info,add);box.appendChild(row);
+      });
+    }catch(error){box.replaceChildren();const empty=document.createElement('div');empty.className='youtube-empty';empty.textContent=error.message||'Não foi possível pesquisar músicas.';box.appendChild(empty)}
   }
   async function removeSharedTrack(index){if(!activeShared?.tracks?.[index])return;activeShared.tracks.splice(index,1);if(await saveActiveShared())toast('Removido da playlist partilhada.')}
   async function leaveSharedPlaylist(){
@@ -1384,7 +1425,8 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('joinSharedBtn').addEventListener('click',()=>openSharedMode('join'));
   $('confirmCreateSharedBtn').addEventListener('click',createSharedPlaylist);
   $('confirmJoinSharedBtn').addEventListener('click',joinSharedPlaylist);
-  $('addToSharedBtn').addEventListener('click',addSelectedToShared);
+  $('searchSharedSongBtn').addEventListener('click',searchSharedSongs);
+  $('sharedSongQuery').addEventListener('keydown',e=>{if(e.key==='Enter')searchSharedSongs();});
   $('copySharedCodeBtn').addEventListener('click',copySharedCode);
   $('deleteSharedBtn').addEventListener('click',deleteSharedPlaylist);
   $('leaveSharedBtn').addEventListener('click',leaveSharedPlaylist);
@@ -1398,7 +1440,6 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('youtubeBackBtn').addEventListener('click',searchYouTubeArtists);
   restorePending = true; loadState(); render(); renderQueue(); setupMediaSession(); initYouTube(); enrichLibrary();
   checkBackup(); ensureFirstSeen(); updateStorageInfo();
-  $('linkBtn').addEventListener('click', shareRestoreLink);
   $('signInBtn').addEventListener('click',signIn);$('signUpBtn').addEventListener('click',signUp);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('syncPassword').focus()});$('syncPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
   let wvDismissed = false; try { wvDismissed = !!sessionStorage.getItem('1flo_wv_dismissed'); } catch(e) {}
   if (inAppBrowser() && !wvDismissed) $('webviewWarn').classList.add('show');
