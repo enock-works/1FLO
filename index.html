@@ -223,8 +223,10 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 .sync-state{font-size:12px;color:var(--muted);margin-top:9px}.sync-state.ok{color:var(--cyan)}.sync-state.warn{color:var(--amber)}
 
 /* --- Pesquisa direta no YouTube --- */
-.youtube-search-actions{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 16px}
-.youtube-search-actions .filter-btn{min-height:44px}
+.youtube-search-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
+.youtube-primary-action{border:0;border-radius:16px;background:linear-gradient(110deg,var(--rose),var(--rose-2));color:#FFF8FA;font-weight:800;padding:14px 16px;min-height:52px;box-shadow:0 8px 26px rgba(212,71,104,.2);display:flex;align-items:center;justify-content:center;gap:7px}
+.youtube-primary-action:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+@media(max-width:430px){.youtube-search-actions{grid-template-columns:1fr}.youtube-primary-action{width:100%}}
 .youtube-search-modal{align-items:flex-end}
 .youtube-search-box{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--modal-line);border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto;box-shadow:0 -8px 40px rgba(0,0,0,.35)}
 .youtube-search-box h2{margin:0 0 7px;font-size:21px}.youtube-search-copy{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.45}
@@ -235,7 +237,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 @media(min-width:600px){.youtube-search-modal{align-items:center}.youtube-search-box{border-radius:24px;padding:25px}}
 @media(max-width:520px){.youtube-query-row{flex-direction:column}.youtube-result{grid-template-columns:58px minmax(0,1fr)}.youtube-result img{width:58px;height:58px}.youtube-result .filter-btn{grid-column:1/-1;width:100%}}
 /* --- Botão flutuante e modal --- */
-.fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:6;border:0;border-radius:28px;background:linear-gradient(110deg,var(--rose),var(--rose-2));color:#FFF8FA;font-weight:800;padding:15px 21px;box-shadow:0 8px 26px rgba(212,71,104,.2)}
+.fab{border:0;border-radius:16px;background:linear-gradient(110deg,var(--rose),var(--rose-2));color:#FFF8FA;font-weight:800;padding:14px 16px;box-shadow:0 8px 26px rgba(212,71,104,.2)}
 .modal-backdrop{position:fixed;inset:0;background:rgba(5,3,12,.68);backdrop-filter:blur(4px);z-index:10;display:none;align-items:flex-end;justify-content:center}
 .modal-backdrop.show{display:flex}
 .modal{width:100%;max-width:600px;background:var(--surface);border-radius:24px 24px 0 0;padding:24px 18px calc(22px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto;border:1px solid var(--modal-line);box-shadow:0 -8px 40px rgba(0,0,0,.35)}
@@ -323,7 +325,10 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     </div>
     <div class="status" id="status" role="status">Pronto quando estiveres</div>
   </section>
-  <div class="youtube-search-actions"><button class="filter-btn" id="youtubeSearchBtn" type="button">⌕ Pesquisar álbuns no YouTube</button></div>
+  <div class="youtube-search-actions" aria-label="Adicionar à biblioteca">
+    <button class="youtube-primary-action" id="addBtn" type="button">＋ Adicionar Link</button>
+    <button class="youtube-primary-action" id="youtubeSearchBtn" type="button">⌕ Pesquisa por Álbum</button>
+  </div>
   <div class="section-head"><h2>A tua playlist</h2><span class="count" id="trackCount">0 músicas</span></div>
   <input class="search-input" id="searchInput" type="search" placeholder="Pesquisar por álbum, música ou artista…" aria-label="Pesquisar biblioteca">
   <div class="library-tools" role="group" aria-label="Filtrar biblioteca">
@@ -341,7 +346,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   <div class="backup"><button class="filter-btn" id="exportBtn" type="button">⬇ Exportar</button><button class="filter-btn" id="linkBtn" type="button">🔗 Link de restauro</button><button class="filter-btn" id="importBtn" type="button">⬆ Importar</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>
 
 </main>
-<button class="fab" id="addBtn">＋ Adicionar música</button>
+
 <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal"><h2 id="modalTitle">Adicionar música</h2>
     <div class="field"><label for="urlInput">Link do YouTube *</label><input id="urlInput" type="url" placeholder="https://youtu.be/…" autocomplete="url"><div class="hint">Aceita vídeos individuais e playlists do YouTube, incluindo links youtube.com/playlist?list=…</div></div>
@@ -376,7 +381,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const SUPABASE_URL = 'https://aqimvwpeziazbwdrcprt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xg4qkkxK5EpqteFU9xJ4QQ_ExlySn1i';
   // Chave pública da YouTube Data API v3, restringida ao domínio do 1FLŌ.
-  const YOUTUBE_DATA_API_KEY = 'AIzaSyDbTzVKoJBTkJZggfzi-yi2cCaK7AA5mZ0';
+  const YOUTUBE_DATA_API_KEY = 'PASTE_YOUTUBE_DATA_API_KEY_HERE';
   const SYNC_TABLE='user_libraries', LOCAL_MODIFIED_KEY='musicflow_library_modified_v1';
   const $ = id => document.getElementById(id);
   const state = { tracks: [], currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
@@ -699,7 +704,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     const list = $('trackList'); list.replaceChildren();
     if (!state.tracks.length) {
       const empty = document.createElement('div'); empty.className='empty';
-      empty.innerHTML = 'Ainda não tens músicas.<br>Carrega em <strong>＋ Adicionar música</strong> para adicionar um álbum, uma playlist ou um vídeo.';
+      empty.innerHTML = 'Ainda não tens músicas.<br>Carrega em <strong>＋ Adicionar Link</strong> para adicionar um álbum, uma playlist ou um vídeo.';
       list.appendChild(empty); return;
     }
     const q = searchTerm.trim().toLocaleLowerCase('pt-PT');
@@ -944,7 +949,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   function openModal(idx) {
     editingIndex = Number.isInteger(idx) ? idx : -1;
     const t = editingIndex >= 0 ? state.tracks[editingIndex] : null;
-    $('modalTitle').textContent = t ? 'Editar música' : 'Adicionar música';
+    $('modalTitle').textContent = t ? 'Editar música' : 'Adicionar Link';
     $('saveBtn').textContent = t ? 'Guardar' : 'Adicionar';
     $('urlInput').disabled = !!t;
     $('urlInput').value = t ? (t.playlistId ? 'https://www.youtube.com/playlist?list=' + t.playlistId : 'https://youtu.be/' + t.videoId) : '';
