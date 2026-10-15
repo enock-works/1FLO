@@ -347,10 +347,32 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   <div class="shared-head"><h2>Playlists partilhadas</h2><div class="shared-actions"><button class="filter-btn" id="createSharedBtn" type="button">＋ Criar</button><button class="filter-btn" id="joinSharedBtn" type="button">⌁ Aderir por código</button></div></div>
   <p class="sub" style="margin:0 2px 10px">Cria coleções colaborativas e partilha o código com outros utilizadores do 1FLŌ.</p>
   <section class="shared-list" id="sharedPlaylistList"><div class="queue-empty">Inicia sessão para consultar playlists partilhadas.</div></section>
-  <div class="section-head"><h2>Cópia de segurança</h2></div>
-  <p class="sub" style="margin:0 2px 10px">A biblioteca fica guardada só neste navegador. Exporta um ficheiro, ou guarda o <strong>link de restauro</strong> nas Notas, no e-mail ou nos favoritos: se o navegador apagar tudo, basta abrir esse link para recuperar a biblioteca.</p>
-  <p class="sub" id="storageInfo" style="margin:0 2px 10px;font-size:12px"></p>
-  <div class="backup"><button class="filter-btn" id="exportBtn" type="button">⬇ Exportar</button><button class="filter-btn" id="linkBtn" type="button">🔗 Link de restauro</button><button class="filter-btn" id="importBtn" type="button">⬆ Importar</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>
+ <div class="section-head">
+  <h2>Cópia e recuperação</h2>
+</div>
+
+<p class="sub" style="margin:0 2px 10px">
+  Quando tens sessão iniciada, a biblioteca é sincronizada entre os teus
+  dispositivos. Podes também exportar uma cópia independente para recuperar
+  a biblioteca em caso de eliminação acidental, perda de acesso ou falha de
+  sincronização.
+</p>
+
+<p class="sub" id="storageInfo"
+   style="margin:0 2px 10px;font-size:12px"></p>
+
+<div class="backup">
+  <button class="filter-btn" id="exportBtn" type="button">
+    ⬇ Exportar cópia
+  </button>
+
+  <button class="filter-btn" id="importBtn" type="button">
+    ⬆ Importar cópia
+  </button>
+
+  <input type="file" id="importFile"
+         accept="application/json,.json" hidden>
+</div>
 
 </main>
 
@@ -1358,7 +1380,6 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('youtubeBackBtn').addEventListener('click',searchYouTubeArtists);
   restorePending = true; loadState(); render(); renderQueue(); setupMediaSession(); initYouTube(); enrichLibrary();
   checkBackup(); ensureFirstSeen(); updateStorageInfo();
-  $('linkBtn').addEventListener('click', shareRestoreLink);
   $('signInBtn').addEventListener('click',signIn);$('signUpBtn').addEventListener('click',signUp);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('syncPassword').focus()});$('syncPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
   let wvDismissed = false; try { wvDismissed = !!sessionStorage.getItem('1flo_wv_dismissed'); } catch(e) {}
   if (inAppBrowser() && !wvDismissed) $('webviewWarn').classList.add('show');
