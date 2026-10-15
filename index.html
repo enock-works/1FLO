@@ -526,12 +526,26 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       return d && d.title ? {title:String(d.title).slice(0,160), artist:cleanArtist(d.author_name)} : null;
     } catch(e) { return null; }
   }
+  function smartArtistCase(value) {
+    const text=String(value||'').trim();
+    if(!text)return '';
+    // Se vier totalmente em minúsculas, aplicar capitalização simples.
+    if(text===text.toLocaleLowerCase('pt-PT')) {
+      return text.replace(/(^|[\s._-])([\p{L}])/gu,(_m,sep,ch)=>sep+ch.toLocaleUpperCase('pt-PT'));
+    }
+    return text;
+  }
   function normalizeTrackArtist(value) {
-    return cleanArtist(String(value || '')
+    let artist=cleanArtist(String(value || '')
       .replace(/\s*-\s*Topic$/i, '')
       .replace(/\s*VEVO$/i, '')
+      .replace(/^@/,'')
       .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
       .trim());
+    // Handles pessoais podem começar por algarismos colados ao nome: 75dillaz -> dillaz.
+    // Não afeta nomes com espaço, como “50 Cent”.
+    artist=artist.replace(/^\d+(?=[\p{L}])/u,'');
+    return smartArtistCase(artist).slice(0,120);
   }
   function artistFromItems(items) {
     const count = new Map();
