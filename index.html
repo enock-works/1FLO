@@ -332,7 +332,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
         <button class="filter-btn" id="signUpBtn" type="button">Criar conta</button>
       </div>
     </div>
-    <div class="sync-row" id="signedInControls" hidden><strong id="accountEmail"></strong><button class="filter-btn" id="syncNowBtn" type="button">Sincronizar agora</button><button class="filter-btn" id="signOutBtn" type="button">Terminar sessão</button></div>
+    <div class="sync-row" id="signedInControls" hidden><strong id="accountEmail"></strong><button class="filter-btn" id="syncNowBtn" type="button">Sincronizar agora</button><button class="filter-btn" id="forceCloudBtn" type="button">Reparar cloud</button><button class="filter-btn" id="signOutBtn" type="button">Terminar sessão</button></div>
     <div class="sync-state" id="syncState" role="status">Modo local: inicia sessão para sincronizar entre aparelhos.</div>
   </section>
   <section class="now-card" aria-label="Leitor">
@@ -431,7 +431,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const state = { tracks: [], deletedItems: {}, schemaVersion: 2, currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
   let libraryFilter = 'all', searchTerm = '', artistSort = false, manualQueue = [], playbackContext = null, preparedVideoId = '';
   let player = null, playerReady = false, metaPlayer = null, metaPlayerReady = false, progressTimer = null, toastTimer = null, seeking = false;
-  let resumeOnVisible = false, sessionPausing = false, iosSuspendedAt = 0, expandedPlaylistId = null, metadataLoadToken = 0, editingIndex = -1, lastFocus = null, errorStreak = 0;
+  let resumeOnVisible = false, sessionPausing = false, expandedPlaylistId = null, metadataLoadToken = 0, editingIndex = -1, lastFocus = null, errorStreak = 0;
   let lastSavedSnapshot = '';
   let lastLibrarySnapshot='', cloud=null, authUser=null, syncTimer=null, syncing=false;
   let sharedPlaylists=[], activeShared=null;
@@ -460,16 +460,9 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     });
     return changed;
   }
-  function normalizedDeletedItems(value){
-    const result={};if(!value||typeof value!=='object')return result;
-    Object.entries(value).forEach(([key,date])=>{if(/^[pv]:[\w-]+$/.test(key)&&!Number.isNaN(Date.parse(date)))result[key]=date});return result;
-  }
-  function mergeDeletedItems(...sets){
-    const merged={};sets.forEach(set=>Object.entries(normalizedDeletedItems(set)).forEach(([key,date])=>{if(!merged[key]||Date.parse(date)>Date.parse(merged[key]))merged[key]=date}));return merged;
-  }
-  function cleanupDeletedItems(items=state.deletedItems){
-    const clean={},now=Date.now(),maxAge=90*24*60*60*1000;Object.entries(normalizedDeletedItems(items)).forEach(([key,date])=>{if(now-Date.parse(date)<maxAge)clean[key]=date});return clean;
-  }
+  function normalizedDeletedItems(value){const out={};if(!value||typeof value!=='object')return out;Object.entries(value).forEach(([k,d])=>{if(/^[pv]:[\w-]+$/.test(k)&&!Number.isNaN(Date.parse(d)))out[k]=d});return out}
+  function mergeDeletedItems(...sets){const out={};sets.forEach(set=>Object.entries(normalizedDeletedItems(set)).forEach(([k,d])=>{if(!out[k]||Date.parse(d)>Date.parse(out[k]))out[k]=d}));return out}
+  function cleanupDeletedItems(value=state.deletedItems){const out={},limit=Date.now()-90*86400000;Object.entries(normalizedDeletedItems(value)).forEach(([k,d])=>{if(Date.parse(d)>limit)out[k]=d});return out}
   function serializedLibrary(){return JSON.stringify({tracks:state.tracks,deletedItems:state.deletedItems,schemaVersion:2})}
   function markLibraryChanged(){const x=serializedLibrary();if(x===lastLibrarySnapshot)return;lastLibrarySnapshot=x;try{localStorage.setItem(LOCAL_MODIFIED_KEY,new Date().toISOString())}catch(e){}scheduleCloudSync()}
   function saveState() {
@@ -514,7 +507,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       const raw = await idbGet('state');
       try { const saved = raw ? JSON.parse(raw) : null; if (saved && Array.isArray(saved.tracks)) tracks = sanitizeTracks(saved.tracks); } catch(e) {}
     }
-    const missing = tracks.filter(t => !state.deletedItems[trackKey(t)] && !state.tracks.some(x=>trackKey(x)===trackKey(t)));
+    const missing=tracks.filter(t=>!state.deletedItems[trackKey(t)]&&!state.tracks.some(x=>trackKey(x)===trackKey(t)));
     if (!missing.length) { restorePending = false; mirrorState(); if (source === 'link' && tracks.length) toast('A biblioteca já tem tudo o que está nesse link.'); return; }
     backupTracks = missing; restoreSource = source;
     const n = missing.length, word = n === 1 ? 'entrada' : 'entradas';
@@ -527,7 +520,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   function restoreBackup() {
     let added = 0;
-    backupTracks.forEach(t=>{const key=trackKey(t);if(!state.deletedItems[key]&&!state.tracks.some(x=>trackKey(x)===key)){state.tracks.push(t);added++;}});
+    backupTracks.forEach(t=>{const k=trackKey(t);if(!state.deletedItems[k]&&!state.tracks.some(x=>trackKey(x)===k)){state.tracks.push(t);added++}});
     restorePending = false; $('restoreBanner').classList.remove('show');
     saveState(); render(); toast(`Biblioteca restaurada (${added} entradas).`);
   }
@@ -689,15 +682,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       const saved = JSON.parse(raw);
       if (saved && Array.isArray(saved.tracks)) {
         state.tracks = sanitizeTracks(saved.tracks);
-        state.deletedItems = cleanupDeletedItems(saved.deletedItems);
-        state.schemaVersion = 2;
+        state.deletedItems=cleanupDeletedItems(saved.deletedItems);state.schemaVersion=2;
         state.currentTrack = Number.isInteger(saved.currentTrack) && saved.currentTrack >= 0 && saved.currentTrack < state.tracks.length ? saved.currentTrack : -1;
         state.shuffle = !!saved.shuffle; state.repeat = !!saved.repeat;
         state.volume = Number.isFinite(saved.volume) ? Math.max(0, Math.min(100, saved.volume)) : 70;
-        normalizeStoredArtistNames();
-        const migratedTitles=normalizeAllSongTitles();
+        normalizeStoredArtistNames(); normalizeAllSongTitles();
         lastSavedSnapshot = serializedState(); lastLibrarySnapshot=serializedLibrary();
-        if(migratedTitles)setTimeout(()=>{lastSavedSnapshot='';saveState();},0);
       }
     } catch(e) {
       try { if (raw) localStorage.setItem(STORE_KEY + '_corrupt_backup', raw); } catch(_) {}
@@ -706,7 +696,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     }
   }
   async function exportLibrary() {
-    const data = JSON.stringify({app:'1FLŌ',version:3,exportedAt:new Date().toISOString(),tracks:state.tracks,deletedItems:state.deletedItems,schemaVersion:2},null,2);
+    const data=JSON.stringify({app:'1FLŌ',version:3,exportedAt:new Date().toISOString(),tracks:state.tracks,deletedItems:state.deletedItems,schemaVersion:2},null,2);
     const name = '1flo-biblioteca-' + new Date().toISOString().slice(0,10) + '.json';
     const markDone = () => { markBackupDone(); toast('Biblioteca exportada.'); };
     try { // No telemóvel abre a folha de partilha (guardar em Ficheiros, iCloud, Drive, e-mail…)
@@ -721,11 +711,10 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   async function importLibrary(file) {
     try {
       const data = JSON.parse(await file.text());
-      const incoming = sanitizeTracks(Array.isArray(data) ? data : ((data && data.tracks) || []));
-      state.deletedItems=cleanupDeletedItems(mergeDeletedItems(state.deletedItems,data?.deletedItems));
+      const incoming=sanitizeTracks(Array.isArray(data)?data:((data&&data.tracks)||[]));state.deletedItems=cleanupDeletedItems(mergeDeletedItems(state.deletedItems,data?.deletedItems));
       if (!incoming.length) { toast('O ficheiro não tem músicas válidas.'); return; }
       let added = 0;
-      incoming.forEach(t => { const key=trackKey(t);if(!state.deletedItems[key]&&!state.tracks.some(x=>trackKey(x)===key)){state.tracks.push(t);added++;} });
+      incoming.forEach(t=>{const k=trackKey(t);if(!state.deletedItems[k]&&!state.tracks.some(x=>trackKey(x)===k)){state.tracks.push(t);added++}});
       saveState(); render(); toast(`${added} entradas importadas (${incoming.length - added} já existiam).`);
     } catch(e) { toast('Ficheiro inválido.'); }
   }
@@ -945,19 +934,17 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     const active=currentTrack();if(active?.playlistId&&playerReady&&player&&player.previousVideo){try{const idx=player.getPlaylistIndex?.()??-1;if(idx>0){player.previousVideo();return}}catch(e){}}
   }
   function removeTrack(index) {
-    const removed = state.tracks[index]; if (!removed) return;
-    const removedKey=trackKey(removed);if(removedKey)state.deletedItems[removedKey]=new Date().toISOString();
+    const removed=state.tracks[index];if(!removed)return;const removedKey=trackKey(removed);if(removedKey)state.deletedItems[removedKey]=new Date().toISOString();
     const wasCurrent = index===state.currentTrack;
     state.tracks.splice(index,1);
     if (!state.tracks.length) { state.currentTrack=-1; state.isPlaying=false; try{if(playerReady)player.stopVideo();}catch(e){} }
     else if (index < state.currentTrack) state.currentTrack--;
     else if (wasCurrent) { state.currentTrack=Math.min(index,state.tracks.length-1); playTrack(state.currentTrack); }
-    saveState(); render(); renderQueue(); toast('Música removida.','Desfazer',()=>restoreTrack(removed,index));
+    saveState();render();renderQueue();scheduleCloudSync();toast('Entrada eliminada e marcada para não reaparecer.','Desfazer',()=>restoreTrack(removed,index));
   }
   function restoreTrack(track, index) {
     index = Math.min(index, state.tracks.length);
-    state.tracks.splice(index, 0, track);
-    delete state.deletedItems[trackKey(track)];
+    state.tracks.splice(index,0,track);delete state.deletedItems[trackKey(track)];
     if (state.currentTrack >= index) state.currentTrack++;
     saveState(); render(); renderQueue(); toast('Música restaurada.');
   }
@@ -976,8 +963,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if (state.tracks.some(t=>item.playlistId ? t.playlistId===item.playlistId : t.videoId===item.videoId)) { toast('Esse vídeo ou playlist já está na biblioteca.'); return; }
     const entry={...item,title:title||(item.playlistId?'A obter nome da playlist…':'Vídeo do YouTube'),artist:artist||(item.playlistId?'Playlist':'Artista desconhecido')};
     if(item.playlistId && !title) entry.autoTitle=true;
-    delete state.deletedItems[trackKey(entry)];
-    state.tracks.push(entry);
+    delete state.deletedItems[trackKey(entry)];state.tracks.push(entry);
     saveState(); render(); closeModal(); $('urlInput').value=''; $('titleInput').value=''; $('artistInput').value='';
     toast(item.playlistId ? 'Playlist do YouTube adicionada; a tentar obter o nome…' : 'Música adicionada à playlist.');
     if(item.playlistId && !title) fetchPlaylistTitle(entry.playlistId, entry); 
@@ -1045,7 +1031,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       $('currentArtist').textContent=data.author || t.artist || '';
       if(data.video_id) setArtwork($('currentArt'),thumb(data.video_id));
       if(t.playlistId && t.autoTitle && data.author) { t.artist=String(data.author).slice(0,120); saveState(); }
-      if('mediaSession' in navigator && typeof MediaMetadata!=='undefined') { try { navigator.mediaSession.metadata=new MediaMetadata({title:normalizeSongTitle(data.title,t.artist||data.author),artist:t.artist||data.author,album:t.playlistId?'YouTube playlist':'FLŌ',artwork:data.video_id?[{src:thumb(data.video_id),sizes:'480x360',type:'image/jpeg'}]:[]}); } catch(e){} }
+      if('mediaSession' in navigator && typeof MediaMetadata!=='undefined') { try { navigator.mediaSession.metadata=new MediaMetadata({title:data.title,artist:data.author||t.artist,album:t.playlistId?'YouTube playlist':'FLŌ',artwork:data.video_id?[{src:thumb(data.video_id),sizes:'480x360',type:'image/jpeg'}]:[]}); } catch(e){} }
     } catch(e) {}
   }
   function openModal(idx) {
@@ -1086,7 +1072,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       $('playBtn').setAttribute('aria-label','Reproduzir');
       updatePlaybackSource();renderQueue();setStatus('Em pausa');
       try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; } catch(e) {}
-      if(document.hidden&&!sessionPausing){resumeOnVisible=true;iosSuspendedAt=Date.now();savePlaybackSnapshot()} // suspensão provável do iOS
+      if (document.hidden && !sessionPausing) resumeOnVisible=true; // o sistema/YouTube pausou com o ecrã bloqueado
       sessionPausing=false;
     } else if (event.data===YT.PlayerState.ENDED) { state.isPlaying=false;nextTrack();
     } else if (event.data===YT.PlayerState.BUFFERING){$('playBtn').disabled=true;$('playBtn').classList.add('loading');setStatus('A carregar…')}
@@ -1110,32 +1096,19 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     set('nexttrack', nextTrack); set('previoustrack', prevTrack);
     set('seekto', d => { try { if (d && Number.isFinite(d.seekTime)) player.seekTo(d.seekTime, true); } catch(e) {} });
   }
-  const PLAYBACK_SNAPSHOT_KEY='1flo_playback_snapshot_v1';
-  function savePlaybackSnapshot(){
-    const track=currentPlaybackTrack();if(!track?.videoId)return;
-    let position=0;try{position=Number(player?.getCurrentTime?.())||0}catch(e){}
-    const snapshot={videoId:track.videoId,position,wasPlaying:!!state.isPlaying,contextType:playbackContext?.type||'',contextName:playbackContext?.name||'',contextIndex:playbackContext?.currentIndex??0,savedAt:Date.now()};
-    try{sessionStorage.setItem(PLAYBACK_SNAPSHOT_KEY,JSON.stringify(snapshot))}catch(e){}
-  }
-  function resumeAfterIOSSuspension(){
-    if(!resumeOnVisible||!playerReady||!player)return;resumeOnVisible=false;
-    let snapshot=null;try{snapshot=JSON.parse(sessionStorage.getItem(PLAYBACK_SNAPSHOT_KEY)||'null')}catch(e){}
-    const track=currentPlaybackTrack();if(!track?.videoId)return;
-    setTimeout(()=>{try{
-      const currentId=player.getVideoData?.().video_id||'';
-      if(currentId!==track.videoId){player.loadVideoById({videoId:track.videoId,startSeconds:Math.max(0,Number(snapshot?.position)||0)});preparedVideoId=track.videoId}else if(snapshot?.position>0&&Math.abs((player.getCurrentTime?.()||0)-snapshot.position)>5)player.seekTo(snapshot.position,true);
-      player.setVolume(state.volume);if(snapshot?.wasPlaying)player.playVideo();
-    }catch(e){}
-    setTimeout(()=>{if(!state.isPlaying&&track)setStatus('O iPhone suspendeu o YouTube — toca ▶ para continuar.');},1400)},250);
-  }
   // Ao voltar à app (desbloquear/trocar de separador) retoma se foi pausada pelo sistema, não por ti.
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='hidden'){if(state.isPlaying){resumeOnVisible=true;iosSuspendedAt=Date.now();savePlaybackSnapshot()}return}
-    resumeAfterIOSSuspension();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { if (state.isPlaying) resumeOnVisible = true; return; }
+    if (!resumeOnVisible || !playerReady || !player) return;
+    resumeOnVisible = false;
+    setTimeout(() => {
+      try {
+        const st = player.getPlayerState ? player.getPlayerState() : -1;
+        if (st !== 1 && st !== 3) player.playVideo();
+      } catch(e) {}
+      setTimeout(() => { if (!state.isPlaying && currentTrack()) setStatus('Pausado ao sair da app — toca ▶ para continuar.'); }, 1200);
+    }, 300);
   });
-  window.addEventListener('pagehide',()=>{if(state.isPlaying){resumeOnVisible=true;savePlaybackSnapshot()}});
-  window.addEventListener('pageshow',resumeAfterIOSSuspension);
-  window.addEventListener('focus',resumeAfterIOSSuspension);
   function initYouTube() {
     // A callback é definida antes de carregar a API para evitar a corrida de inicialização.
     window.onYouTubeIframeAPIReady = function() {
@@ -1339,22 +1312,18 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   function cloudConfigured(){return /^https:\/\/.+\.supabase\.co$/i.test(SUPABASE_URL)&&!SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_')}
   function setSyncState(m,k=''){const e=$('syncState');e.textContent=m;e.className='sync-state'+(k?' '+k:'')}
   function updateAccountUI(){$('signedOutControls').hidden=!!authUser;$('signedInControls').hidden=!authUser;$('accountEmail').textContent=authUser?.email||'';renderSharedPlaylists();if(!cloudConfigured())setSyncState('Sincronização ainda não configurada. A biblioteca continua guardada localmente.','warn');else if(!authUser)setSyncState('Modo local: inicia sessão para sincronizar entre aparelhos.')}
-  function scheduleCloudSync(){if(!cloud||!authUser||syncing)return;clearTimeout(syncTimer);syncTimer=setTimeout(pushLibrary,900)}
+  function scheduleCloudSync(){if(!cloud||!authUser)return;clearTimeout(syncTimer);syncTimer=setTimeout(async()=>{if(syncing){scheduleCloudSync();return}await pushLibrary()},900)}
   async function pushLibrary(){if(!cloud||!authUser||syncing)return;syncing=true;setSyncState('A sincronizar…');const modified=localStorage.getItem(LOCAL_MODIFIED_KEY)||new Date().toISOString();const {error}=await cloud.from(SYNC_TABLE).upsert({user_id:authUser.id,library:{tracks:state.tracks,deletedItems:cleanupDeletedItems(),schemaVersion:2},client_modified_at:modified},{onConflict:'user_id'});syncing=false;setSyncState(error?'Falha de sincronização. Os dados locais foram mantidos.':'Biblioteca sincronizada.',error?'warn':'ok')}
+  async function forceCloudOverwrite(){if(!cloud||!authUser){toast('Inicia sessão primeiro.');return}if(!confirm('Substituir a biblioteca cloud pela biblioteca deste dispositivo?'))return;if(syncing){toast('Sincronização em curso. Tenta novamente.');return}syncing=true;const modified=new Date().toISOString();const {error}=await cloud.from(SYNC_TABLE).upsert({user_id:authUser.id,library:{tracks:state.tracks,deletedItems:cleanupDeletedItems(),schemaVersion:2},client_modified_at:modified},{onConflict:'user_id'});syncing=false;if(error){toast('Falha ao reparar a cloud.');return}setSyncState('Biblioteca remota substituída por este dispositivo.','ok');toast('Cloud reparada.');}
   function trackKey(t){return t?.playlistId?'p:'+t.playlistId:t?.videoId?'v:'+t.videoId:''}
-  function mergeLibraries(localTracks,remoteTracks,deletedItems={}){
-    const deleted=normalizedDeletedItems(deletedItems),merged=new Map();
-    sanitizeTracks(remoteTracks||[]).forEach(t=>{const k=trackKey(t);if(k&&!deleted[k])merged.set(k,t)});
-    sanitizeTracks(localTracks||[]).forEach(t=>{const k=trackKey(t);if(!k||deleted[k])return;const remote=merged.get(k);if(!remote){merged.set(k,t);return}merged.set(k,{...remote,...t,favorite:!!(remote.favorite||t.favorite),items:(t.items?.length?t.items:remote.items)})});
-    return [...merged.values()];
-  }
+  function mergeLibraries(localTracks,remoteTracks,deletedItems={}){const deleted=normalizedDeletedItems(deletedItems),merged=new Map();sanitizeTracks(remoteTracks||[]).forEach(t=>{const k=trackKey(t);if(k&&!deleted[k])merged.set(k,t)});sanitizeTracks(localTracks||[]).forEach(t=>{const k=trackKey(t);if(!k||deleted[k])return;const remote=merged.get(k);merged.set(k,remote?{...remote,...t,favorite:!!(remote.favorite||t.favorite),items:(t.items?.length?t.items:remote.items)}:t)});return [...merged.values()]}
+
   async function reconcileLibrary(){
     if(!cloud||!authUser||syncing)return;
     syncing=true;setSyncState('A comparar bibliotecas…');
     const {data,error}=await cloud.from(SYNC_TABLE).select('library,client_modified_at,updated_at').eq('user_id',authUser.id).maybeSingle();
     if(error){syncing=false;setSyncState('Não foi possível consultar a biblioteca remota.','warn');return}
-    const remoteTracks=Array.isArray(data?.library?.tracks)?data.library.tracks:[];
-    state.deletedItems=cleanupDeletedItems(mergeDeletedItems(data?.library?.deletedItems,state.deletedItems));
+    const remoteTracks=Array.isArray(data?.library?.tracks)?data.library.tracks:[];state.deletedItems=cleanupDeletedItems(mergeDeletedItems(data?.library?.deletedItems,state.deletedItems));
     const merged=mergeLibraries(state.tracks,remoteTracks,state.deletedItems);
     merged.forEach(track=>{
       if(track?.playlistId){
@@ -1362,10 +1331,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
         (track.items||[]).forEach(item=>{item.artist=normalizeTrackArtist(item.artist);item.title=normalizeSongTitle(item.originalTitle||item.title,track.artist||item.artist);});
       }
     });
-    const before=JSON.stringify(state.tracks);
-    state.tracks=merged;
-    const titlesChanged=normalizeAllSongTitles();
-    const changed=before!==JSON.stringify(state.tracks)||titlesChanged;
+    const before=JSON.stringify(state.tracks);state.tracks=merged;const titlesChanged=normalizeAllSongTitles();const changed=before!==JSON.stringify(state.tracks)||titlesChanged;
     if(changed){state.currentTrack=-1;lastLibrarySnapshot=serializedLibrary();lastSavedSnapshot='';try{localStorage.setItem(LOCAL_MODIFIED_KEY,new Date().toISOString())}catch(e){}saveState();render();renderQueue()}
     syncing=false;
     await pushLibrary();
@@ -1485,7 +1451,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('queueBtn').addEventListener('click',openQueue);$('closeQueueBtn').addEventListener('click',closeQueue);$('queueBackdrop').addEventListener('click',e=>{if(e.target===$('queueBackdrop'))closeQueue()});
   restorePending = true; loadState(); normalizeAllSongTitles(); render(); renderQueue(); setupMediaSession(); initYouTube(); enrichLibrary();
   checkBackup(); ensureFirstSeen(); updateStorageInfo();
-  $('signInBtn').addEventListener('click',signIn);$('signUpBtn').addEventListener('click',signUp);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('syncPassword').focus()});$('syncPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
+  $('signInBtn').addEventListener('click',signIn);$('signUpBtn').addEventListener('click',signUp);$('syncEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('syncPassword').focus()});$('syncPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});$('syncNowBtn').addEventListener('click',reconcileLibrary);$('forceCloudBtn').addEventListener('click',forceCloudOverwrite);$('signOutBtn').addEventListener('click',signOut);initCloudSync();
   let wvDismissed = false; try { wvDismissed = !!sessionStorage.getItem('1flo_wv_dismissed'); } catch(e) {}
   if (inAppBrowser() && !wvDismissed) $('webviewWarn').classList.add('show');
   $('webviewDismissBtn').addEventListener('click', () => { $('webviewWarn').classList.remove('show'); try { sessionStorage.setItem('1flo_wv_dismissed', '1'); } catch(e) {} });
