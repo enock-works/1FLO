@@ -224,6 +224,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 
 /* --- Playlists partilhadas --- */
 .shared-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 2px 12px}.shared-head h2{font-size:19px;margin:0}.shared-actions{display:flex;gap:8px;flex-wrap:wrap}.shared-list{display:flex;flex-direction:column;gap:8px}.shared-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:13px 14px;background:var(--surface-3);border:1px solid var(--surface-line);border-radius:16px}.shared-name{font-weight:750}.shared-meta{font-size:12px;color:var(--muted);margin-top:4px}.shared-code{font-family:monospace;letter-spacing:1px;color:var(--cyan)}
+.shared-delete{color:#FF9AAA!important;border-color:#7A3D50!important;background:#2A1520!important}
 .shared-modal{align-items:flex-end}.shared-box{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--modal-line);border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto}.shared-box h2{margin:0 0 8px}.shared-form{display:flex;gap:9px}.shared-form input,.shared-form select{flex:1;min-width:0;background:#140D16;border:1px solid var(--modal-line);border-radius:12px;padding:13px;color:var(--text)}.shared-tracks{display:flex;flex-direction:column;gap:6px;margin-top:14px}.shared-track{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--surface-2)}.shared-track-info{min-width:0;flex:1}.shared-track-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shared-track-artist{font-size:11px;color:var(--muted);margin-top:3px}.shared-note{font-size:12px;color:var(--muted);line-height:1.45;margin:8px 0 14px}
 @media(min-width:600px){.shared-modal{align-items:center}.shared-box{border-radius:24px;padding:25px}}@media(max-width:520px){.shared-head{align-items:flex-start;flex-direction:column}.shared-actions{width:100%}.shared-actions .filter-btn{flex:1}.shared-form{flex-direction:column}.shared-card{grid-template-columns:1fr}.shared-card .filter-btn{width:100%}}
 /* --- Pesquisa direta no YouTube --- */
@@ -371,7 +372,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     <div id="sharedDetailPanel" hidden>
       <div class="shared-form"><select id="sharedTrackSelect" aria-label="Entrada da biblioteca"></select><button class="action save" id="addToSharedBtn" type="button">Adicionar</button></div>
       <div class="shared-tracks" id="sharedTrackList"></div>
-      <div class="shared-actions" style="margin-top:14px"><button class="filter-btn" id="copySharedCodeBtn" type="button">Copiar código</button><button class="filter-btn" id="leaveSharedBtn" type="button">Sair da playlist</button></div>
+      <div class="shared-actions" style="margin-top:14px"><button class="filter-btn" id="copySharedCodeBtn" type="button">Copiar código</button><button class="filter-btn" id="leaveSharedBtn" type="button">Sair da playlist</button><button class="filter-btn shared-delete" id="deleteSharedBtn" type="button">Eliminar playlist</button></div>
     </div>
     <div class="modal-actions"><button class="action cancel" id="closeSharedBtn" type="button">Fechar</button></div>
   </div>
@@ -1164,12 +1165,23 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   async function loadSharedPlaylists(){
     if(!cloud||!authUser){sharedPlaylists=[];renderSharedPlaylists();return}
-    const {data,error}=await cloud.from('shared_playlists').select('id,name,owner_id,share_code,tracks,updated_at').order('updated_at',{ascending:false});
-    if(error){console.error(error);sharedPlaylists=[];renderSharedPlaylists();return}
-    sharedPlaylists=(data||[]).map(p=>({...p,tracks:sanitizeTracks(Array.isArray(p.tracks)?p.tracks:[])}));renderSharedPlaylists();
+    const {data,error}=await cloud.rpc('my_shared_playlists');
+    if(error){
+      console.error('Erro ao carregar playlists partilhadas:',error);
+      sharedPlaylists=[];renderSharedPlaylists();
+      setSyncState(`Não foi possível carregar playlists partilhadas${error.code?` (${error.code})`:''}.`,'warn');
+      return;
+    }
+    sharedPlaylists=(data||[])
+      .map(p=>({...p,tracks:sanitizeTracks(Array.isArray(p.tracks)?p.tracks:[])}))
+      .sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
+    renderSharedPlaylists();
   }
   function renderSharedDetail(){
     if(!activeShared)return;
+    const isOwner=activeShared.owner_id===authUser?.id;
+    $('deleteSharedBtn').hidden=!isOwner;
+    $('leaveSharedBtn').hidden=isOwner;
     const select=$('sharedTrackSelect');select.replaceChildren();
     state.tracks.forEach(track=>{const option=document.createElement('option');option.value=sharedTrackKey(track);option.textContent=`${track.title} · ${track.artist}`;select.appendChild(option)});
     if(!state.tracks.length){const option=document.createElement('option');option.textContent='A biblioteca está vazia';option.value='';select.appendChild(option)}
@@ -1192,9 +1204,11 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       toast(error.message ? `Supabase: ${error.message}` : 'Não foi possível criar a playlist.');
       return;
     }
-    $('sharedNameInput').value='';closeSharedModal();await loadSharedPlaylists();
+    $('sharedNameInput').value='';closeSharedModal();
+    await loadSharedPlaylists();
     const created=sharedPlaylists.find(p=>p.owner_id===authUser.id&&p.name===cleanName);
-    if(created)openSharedMode('detail',created);else toast('Playlist criada.');
+    if(created){openSharedMode('detail',created);toast('Playlist criada e apresentada.');}
+    else{toast('A playlist foi criada, mas a listagem não a devolveu. Executa o SQL de correção no Supabase.');}
   }
   async function joinSharedPlaylist(){
     const code=$('sharedCodeInput').value.trim().toUpperCase();if(!code){toast('Introduz o código de partilha.');return}
@@ -1218,6 +1232,22 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if(activeShared.owner_id===authUser.id){toast('O proprietário não pode sair. Pode eliminar a playlist no Supabase.');return}
     const {error}=await cloud.from('shared_playlist_members').delete().eq('playlist_id',activeShared.id).eq('user_id',authUser.id);if(error){toast('Não foi possível sair da playlist.');return}
     closeSharedModal();await loadSharedPlaylists();
+  }
+  async function deleteSharedPlaylist(){
+    if(!activeShared||activeShared.owner_id!==authUser?.id){toast('Apenas o proprietário pode eliminar esta playlist.');return}
+    const playlistName=activeShared.name||'esta playlist';
+    if(!window.confirm(`Eliminar permanentemente “${playlistName}”? Esta ação remove a playlist para todos os membros.`))return;
+    const id=activeShared.id;
+    const {error}=await cloud.from('shared_playlists').delete().eq('id',id).eq('owner_id',authUser.id);
+    if(error){
+      console.error('Erro ao eliminar playlist partilhada:',error);
+      setSyncState(`Falha ao eliminar playlist partilhada${error.code?` (${error.code})`:''}.`,'warn');
+      toast(error.message?`Supabase: ${error.message}`:'Não foi possível eliminar a playlist.');
+      return;
+    }
+    closeSharedModal();
+    await loadSharedPlaylists();
+    toast('Playlist partilhada eliminada.');
   }
   async function copySharedCode(){if(!activeShared)return;try{await navigator.clipboard.writeText(activeShared.share_code);toast('Código copiado.')}catch(e){window.prompt('Copia o código:',activeShared.share_code)}}
   function cloudConfigured(){return /^https:\/\/.+\.supabase\.co$/i.test(SUPABASE_URL)&&!SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_')}
@@ -1356,6 +1386,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('confirmJoinSharedBtn').addEventListener('click',joinSharedPlaylist);
   $('addToSharedBtn').addEventListener('click',addSelectedToShared);
   $('copySharedCodeBtn').addEventListener('click',copySharedCode);
+  $('deleteSharedBtn').addEventListener('click',deleteSharedPlaylist);
   $('leaveSharedBtn').addEventListener('click',leaveSharedPlaylist);
   $('closeSharedBtn').addEventListener('click',closeSharedModal);
   $('sharedBackdrop').addEventListener('click',e=>{if(e.target===$('sharedBackdrop'))closeSharedModal();});
