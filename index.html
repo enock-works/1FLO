@@ -222,6 +222,18 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 .sync-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.sync-row input{flex:1;min-width:210px;background:var(--surface);border:1px solid var(--modal-line);border-radius:12px;padding:12px;color:var(--text)}
 .sync-state{font-size:12px;color:var(--muted);margin-top:9px}.sync-state.ok{color:var(--cyan)}.sync-state.warn{color:var(--amber)}
 
+/* --- Pesquisa direta no YouTube --- */
+.youtube-search-actions{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 16px}
+.youtube-search-actions .filter-btn{min-height:44px}
+.youtube-search-modal{align-items:flex-end}
+.youtube-search-box{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--modal-line);border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto;box-shadow:0 -8px 40px rgba(0,0,0,.35)}
+.youtube-search-box h2{margin:0 0 7px;font-size:21px}.youtube-search-copy{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.45}
+.youtube-query-row{display:flex;gap:9px}.youtube-query-row input{flex:1;min-width:0;background:#140D16;border:1px solid var(--modal-line);border-radius:12px;padding:13px 14px;color:var(--text);outline:none}.youtube-query-row input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(212,71,104,.16)}
+.youtube-results{display:flex;flex-direction:column;gap:8px;margin-top:16px}.youtube-result{display:grid;grid-template-columns:68px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--surface-line);border-radius:15px;background:var(--surface-2)}
+.youtube-result img{width:68px;height:68px;object-fit:cover;border-radius:11px;background:#261722}.youtube-result-title{font-weight:750;font-size:14px;line-height:1.25}.youtube-result-meta{color:var(--muted);font-size:12px;margin-top:4px}.youtube-result .filter-btn{white-space:nowrap}
+.youtube-back{margin-top:12px}.youtube-empty{padding:18px;color:var(--muted);text-align:center;border:1px dashed var(--surface-line);border-radius:14px}
+@media(min-width:600px){.youtube-search-modal{align-items:center}.youtube-search-box{border-radius:24px;padding:25px}}
+@media(max-width:520px){.youtube-query-row{flex-direction:column}.youtube-result{grid-template-columns:58px minmax(0,1fr)}.youtube-result img{width:58px;height:58px}.youtube-result .filter-btn{grid-column:1/-1;width:100%}}
 /* --- Botão flutuante e modal --- */
 .fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:6;border:0;border-radius:28px;background:linear-gradient(110deg,var(--rose),var(--rose-2));color:#FFF8FA;font-weight:800;padding:15px 21px;box-shadow:0 8px 26px rgba(212,71,104,.2)}
 .modal-backdrop{position:fixed;inset:0;background:rgba(5,3,12,.68);backdrop-filter:blur(4px);z-index:10;display:none;align-items:flex-end;justify-content:center}
@@ -311,6 +323,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     </div>
     <div class="status" id="status" role="status">Pronto quando estiveres</div>
   </section>
+  <div class="youtube-search-actions"><button class="filter-btn" id="youtubeSearchBtn" type="button">⌕ Pesquisar álbuns no YouTube</button></div>
   <div class="section-head"><h2>A tua playlist</h2><span class="count" id="trackCount">0 músicas</span></div>
   <input class="search-input" id="searchInput" type="search" placeholder="Pesquisar por álbum, música ou artista…" aria-label="Pesquisar biblioteca">
   <div class="library-tools" role="group" aria-label="Filtrar biblioteca">
@@ -337,6 +350,19 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     <div class="modal-actions"><button class="action cancel" id="cancelBtn">Cancelar</button><button class="action save" id="saveBtn">Adicionar</button></div>
   </div>
 </div>
+<div class="modal-backdrop youtube-search-modal" id="youtubeSearchBackdrop" role="dialog" aria-modal="true" aria-labelledby="youtubeSearchTitle">
+  <div class="youtube-search-box">
+    <h2 id="youtubeSearchTitle">Pesquisar álbuns no YouTube</h2>
+    <p class="youtube-search-copy" id="youtubeSearchCopy">Pesquisa o artista, seleciona o canal certo e adiciona uma playlist à biblioteca.</p>
+    <div class="youtube-query-row">
+      <input id="youtubeArtistQuery" type="search" autocomplete="off" placeholder="Nome do artista ou banda" aria-label="Nome do artista ou banda">
+      <button class="action save" id="youtubeArtistSearchBtn" type="button">Pesquisar</button>
+    </div>
+    <button class="filter-btn youtube-back" id="youtubeBackBtn" type="button" hidden>← Voltar aos canais</button>
+    <div class="youtube-results" id="youtubeSearchResults"></div>
+    <div class="modal-actions"><button class="action cancel" id="youtubeSearchCloseBtn" type="button">Fechar</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="ytMount" aria-hidden="true"><div id="ytPlayer"></div></div><div id="metaYtMount" aria-hidden="true"><div id="metaYtPlayer"></div></div>
 <script>
@@ -350,7 +376,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const SUPABASE_URL = 'https://aqimvwpeziazbwdrcprt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xg4qkkxK5EpqteFU9xJ4QQ_ExlySn1i';
   // Chave pública da YouTube Data API v3, restringida ao domínio do 1FLŌ.
-  const YOUTUBE_DATA_API_KEY = 'PASTE_YOUTUBE_DATA_API_KEY_HERE';
+  const YOUTUBE_DATA_API_KEY = 'AIzaSyDbTzVKoJBTkJZggfzi-yi2cCaK7AA5mZ0';
   const SYNC_TABLE='user_libraries', LOCAL_MODIFIED_KEY='musicflow_library_modified_v1';
   const $ = id => document.getElementById(id);
   const state = { tracks: [], currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
@@ -1012,6 +1038,80 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     script.onerror=()=>{setStatus('Não foi possível carregar o YouTube. Verifica a ligação à Internet.');};
     document.head.appendChild(script);
   }
+  function youtubeApiUrl(resource, params={}) {
+    const url=new URL('https://www.googleapis.com/youtube/v3/'+resource);
+    Object.entries({...params,key:YOUTUBE_DATA_API_KEY}).forEach(([key,value])=>url.searchParams.set(key,String(value)));
+    return url.toString();
+  }
+  function bestYouTubeThumb(snippet={}) {
+    const thumbs=snippet.thumbnails||{};
+    return thumbs.high?.url||thumbs.medium?.url||thumbs.default?.url||PLACEHOLDER_IMAGE;
+  }
+  function openYouTubeSearch() {
+    if(!youtubeDataApiConfigured()) { toast('Configura primeiro a chave da YouTube Data API.'); return; }
+    $('youtubeSearchBackdrop').classList.add('show');
+    $('youtubeBackBtn').hidden=true;
+    $('youtubeSearchCopy').textContent='Pesquisa o artista, seleciona o canal certo e adiciona uma playlist à biblioteca.';
+    $('youtubeSearchResults').replaceChildren();
+    setTimeout(()=>$('youtubeArtistQuery').focus(),120);
+  }
+  function closeYouTubeSearch() { $('youtubeSearchBackdrop').classList.remove('show'); }
+  function youtubeEmpty(message) {
+    const el=document.createElement('div');el.className='youtube-empty';el.textContent=message;
+    $('youtubeSearchResults').replaceChildren(el);
+  }
+  function youtubeResultRow({image,title,meta,buttonLabel,onClick}) {
+    const row=document.createElement('div');row.className='youtube-result';
+    const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=image||PLACEHOLDER_IMAGE;
+    const text=document.createElement('div');
+    const heading=document.createElement('div');heading.className='youtube-result-title';heading.textContent=title;
+    const sub=document.createElement('div');sub.className='youtube-result-meta';sub.textContent=meta||'';text.append(heading,sub);
+    const button=document.createElement('button');button.type='button';button.className='filter-btn';button.textContent=buttonLabel;button.addEventListener('click',onClick);
+    row.append(img,text,button);return row;
+  }
+  async function searchYouTubeArtists() {
+    const query=$('youtubeArtistQuery').value.trim();
+    if(query.length<2){toast('Escreve pelo menos 2 caracteres.');return;}
+    youtubeEmpty('A pesquisar canais…');
+    try {
+      const response=await fetchWithTimeout(youtubeApiUrl('search',{part:'snippet',type:'channel',maxResults:10,q:query}));
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data?.error?.message||'Erro da YouTube Data API');
+      const items=data.items||[];if(!items.length){youtubeEmpty('Não foram encontrados canais para esta pesquisa.');return;}
+      const box=$('youtubeSearchResults');box.replaceChildren();
+      items.forEach(item=>{
+        const snippet=item.snippet||{},channelId=item.id?.channelId;
+        if(!channelId)return;
+        box.appendChild(youtubeResultRow({image:bestYouTubeThumb(snippet),title:snippet.channelTitle||snippet.title,meta:snippet.description||'Canal do YouTube',buttonLabel:'Ver álbuns',onClick:()=>loadYouTubeChannelPlaylists(channelId,snippet.channelTitle||snippet.title)}));
+      });
+    } catch(error) { youtubeEmpty(error.message||'Não foi possível pesquisar no YouTube.'); }
+  }
+  async function loadYouTubeChannelPlaylists(channelId,channelTitle) {
+    youtubeEmpty('A carregar playlists…');$('youtubeBackBtn').hidden=false;
+    $('youtubeSearchCopy').textContent='Playlists públicas de '+channelTitle+'.';
+    try {
+      const response=await fetchWithTimeout(youtubeApiUrl('playlists',{part:'snippet,contentDetails,status',channelId,maxResults:50}));
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data?.error?.message||'Erro da YouTube Data API');
+      const items=(data.items||[]).filter(item=>item.status?.privacyStatus!=='private');
+      if(!items.length){youtubeEmpty('Este canal não tem playlists públicas disponíveis.');return;}
+      const box=$('youtubeSearchResults');box.replaceChildren();
+      items.sort((a,b)=>(b.snippet?.publishedAt||'').localeCompare(a.snippet?.publishedAt||''));
+      items.forEach(item=>{
+        const snippet=item.snippet||{},count=item.contentDetails?.itemCount;
+        box.appendChild(youtubeResultRow({image:bestYouTubeThumb(snippet),title:snippet.localized?.title||snippet.title||'Playlist',meta:Number.isFinite(count)?`${count} ${count===1?'faixa':'faixas'}`:'Playlist pública',buttonLabel:state.tracks.some(t=>t.playlistId===item.id)?'Já adicionada':'Adicionar',onClick:()=>addYouTubeSearchPlaylist(item,channelTitle)}));
+      });
+    } catch(error) { youtubeEmpty(error.message||'Não foi possível carregar as playlists.'); }
+  }
+  function addYouTubeSearchPlaylist(item,channelTitle) {
+    if(!item?.id)return;
+    if(state.tracks.some(t=>t.playlistId===item.id)){toast('Esta playlist já está na biblioteca.');return;}
+    const snippet=item.snippet||{};
+    const entry={playlistId:item.id,title:String(snippet.localized?.title||snippet.title||'Playlist do YouTube').slice(0,160),artist:normalizeTrackArtist(channelTitle||'Artista por identificar'),metadataSource:'YouTube Data API',autoTitle:false};
+    state.tracks.push(entry);saveState();render();closeYouTubeSearch();toast('Playlist adicionada. A obter faixas e artista…');
+    const waitForPlayer=()=>{if(metaPlayerReady&&metaPlayer)loadPlaylistItems(entry);else setTimeout(waitForPlayer,350);};
+    waitForPlayer();
+  }
   function cloudConfigured(){return /^https:\/\/.+\.supabase\.co$/i.test(SUPABASE_URL)&&!SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_')}
   function setSyncState(m,k=''){const e=$('syncState');e.textContent=m;e.className='sync-state'+(k?' '+k:'')}
   function updateAccountUI(){$('signedOutControls').hidden=!!authUser;$('signedInControls').hidden=!authUser;$('accountEmail').textContent=authUser?.email||'';if(!cloudConfigured())setSyncState('Sincronização ainda não configurada. A biblioteca continua guardada localmente.','warn');else if(!authUser)setSyncState('Modo local: inicia sessão para sincronizar entre aparelhos.')}
@@ -1142,6 +1242,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('progress').addEventListener('input',()=>{seeking=true;});
   $('progress').addEventListener('change',e=>{if(playerReady&&player&&player.getDuration){const d=player.getDuration();if(d>0)player.seekTo(d*(Number(e.target.value)/1000),true);}seeking=false;});
   document.addEventListener('keydown',e=>{if(e.code==='Space'&&!['INPUT','BUTTON'].includes(document.activeElement.tagName)&&!$('modalBackdrop').classList.contains('show')){e.preventDefault();togglePlay();}if(e.key==='Escape')closeModal();});
+  $('youtubeSearchBtn').addEventListener('click',openYouTubeSearch);
+  $('youtubeSearchCloseBtn').addEventListener('click',closeYouTubeSearch);
+  $('youtubeSearchBackdrop').addEventListener('click',e=>{if(e.target===$('youtubeSearchBackdrop'))closeYouTubeSearch();});
+  $('youtubeArtistSearchBtn').addEventListener('click',searchYouTubeArtists);
+  $('youtubeArtistQuery').addEventListener('keydown',e=>{if(e.key==='Enter')searchYouTubeArtists();});
+  $('youtubeBackBtn').addEventListener('click',searchYouTubeArtists);
   restorePending = true; loadState(); render(); renderQueue(); setupMediaSession(); initYouTube(); enrichLibrary();
   checkBackup(); ensureFirstSeen(); updateStorageInfo();
   $('linkBtn').addEventListener('click', shareRestoreLink);
