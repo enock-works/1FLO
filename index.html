@@ -371,6 +371,19 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   function setStatus(message) { $('status').textContent = message; }
   function serializedState() { return JSON.stringify({...state, isPlaying:false}); }
+  function normalizeStoredArtistNames(){
+    let changed=false;
+    state.tracks.forEach(track=>{
+      if(!track?.playlistId)return;
+      const normalized=normalizeTrackArtist(track.artist);
+      if(normalized && normalized!==track.artist){track.artist=normalized;changed=true;}
+      (track.items||[]).forEach(item=>{
+        const itemArtist=normalizeTrackArtist(item.artist);
+        if(itemArtist && itemArtist!==item.artist){item.artist=itemArtist;changed=true;}
+      });
+    });
+    return changed;
+  }
   function serializedLibrary(){return JSON.stringify(state.tracks)}
   function markLibraryChanged(){const x=serializedLibrary();if(x===lastLibrarySnapshot)return;lastLibrarySnapshot=x;try{localStorage.setItem(LOCAL_MODIFIED_KEY,new Date().toISOString())}catch(e){}scheduleCloudSync()}
   function saveState() {
@@ -549,7 +562,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   function sanitizeTracks(list) {
     return list.filter(t => t && ((typeof t.videoId === 'string' && /^[\w-]{11}$/.test(t.videoId)) || (typeof t.playlistId === 'string' && /^[\w-]+$/.test(t.playlistId))))
-          .map(t => ({...(t.videoId ? {videoId:t.videoId} : {}), ...(t.playlistId ? {playlistId:t.playlistId} : {}), ...(t.favorite ? {favorite:true} : {}), ...(t.autoTitle ? {autoTitle:true} : {}), ...(t.metadataSource ? {metadataSource:String(t.metadataSource).slice(0,80)} : {}), ...(t.artistSource ? {artistSource:String(t.artistSource).slice(0,80)} : {}), ...(Array.isArray(t.items) ? {items:t.items.filter(x=>x&&typeof x.videoId==='string'&&/^[\w-]{11}$/.test(x.videoId)).map(x=>({videoId:x.videoId,title:String(x.title||'Faixa').slice(0,160),artist:String(x.artist||'').slice(0,120)}))} : {}), title:String(t.title || (t.playlistId ? 'Playlist do YouTube' : 'Sem título')).slice(0,160), artist:String(t.artist || (t.playlistId ? 'Álbum do YouTube' : 'Artista desconhecido')).slice(0,120)}));
+          .map(t => ({...(t.videoId ? {videoId:t.videoId} : {}), ...(t.playlistId ? {playlistId:t.playlistId} : {}), ...(t.favorite ? {favorite:true} : {}), ...(t.autoTitle ? {autoTitle:true} : {}), ...(t.metadataSource ? {metadataSource:String(t.metadataSource).slice(0,80)} : {}), ...(t.artistSource ? {artistSource:String(t.artistSource).slice(0,80)} : {}), ...(Array.isArray(t.items) ? {items:t.items.filter(x=>x&&typeof x.videoId==='string'&&/^[\w-]{11}$/.test(x.videoId)).map(x=>({videoId:x.videoId,title:String(x.title||'Faixa').slice(0,160),artist:String(x.artist||'').slice(0,120)}))} : {}), title:String(t.title || (t.playlistId ? 'Playlist do YouTube' : 'Sem título')).slice(0,160), artist:(t.playlistId ? normalizeTrackArtist(t.artist || 'Álbum do YouTube') : String(t.artist || 'Artista desconhecido').slice(0,120))}));
   }
   function loadState() {
     let raw = null;
@@ -562,6 +575,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
         state.currentTrack = Number.isInteger(saved.currentTrack) && saved.currentTrack >= 0 && saved.currentTrack < state.tracks.length ? saved.currentTrack : -1;
         state.shuffle = !!saved.shuffle; state.repeat = !!saved.repeat;
         state.volume = Number.isFinite(saved.volume) ? Math.max(0, Math.min(100, saved.volume)) : 70;
+        normalizeStoredArtistNames();
         lastSavedSnapshot = serializedState(); lastLibrarySnapshot=serializedLibrary();
       }
     } catch(e) {
@@ -1008,6 +1022,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if(error){syncing=false;setSyncState('Não foi possível consultar a biblioteca remota.','warn');return}
     const remoteTracks=Array.isArray(data?.library?.tracks)?data.library.tracks:[];
     const merged=mergeLibraries(state.tracks,remoteTracks);
+    merged.forEach(track=>{
+      if(track?.playlistId){
+        track.artist=normalizeTrackArtist(track.artist);
+        (track.items||[]).forEach(item=>{item.artist=normalizeTrackArtist(item.artist);});
+      }
+    });
     const changed=JSON.stringify(merged)!==JSON.stringify(state.tracks);
     state.tracks=merged;
     if(changed){state.currentTrack=-1;lastLibrarySnapshot=serializedLibrary();lastSavedSnapshot='';try{localStorage.setItem(LOCAL_MODIFIED_KEY,new Date().toISOString())}catch(e){}saveState();render();renderQueue()}
