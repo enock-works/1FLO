@@ -897,12 +897,24 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     try{player.loadPlaylist({listType:'playlist',list:item.playlistId,index:0});player.setVolume(state.volume);playbackContext={type:'album-native',name:item.title,tracks:[],currentIndex:0};requestAnimationFrame(()=>{saveState();render();renderQueue()})}catch(e){setStatus('Não foi possível iniciar a reprodução.')}
   }
   function togglePlay() {
-    if (!state.tracks.length && !currentPlaybackTrack()) { toast('Adiciona primeiro uma música.'); return; }
-    if (state.currentTrack < 0) { playTrack(0); return; }
+    const activePlaybackTrack=currentPlaybackTrack();
+    if (!state.tracks.length && !activePlaybackTrack) { toast('Adiciona primeiro uma música.'); return; }
     if (!playerReady || !player) { toast('O leitor do YouTube ainda não está pronto.'); return; }
     try {
-      if (state.isPlaying) player.pauseVideo();
-      else player.playVideo();
+      if (state.isPlaying) {
+        player.pauseVideo();
+        return;
+      }
+      // Uma playlist/álbum ativo tem sempre prioridade sobre state.currentTrack,
+      // que pode continuar a apontar para a primeira entrada da biblioteca pessoal.
+      if (playbackContext?.tracks?.length && activePlaybackTrack) {
+        const videoId=player.getVideoData?.().video_id||'';
+        if(videoId===activePlaybackTrack.videoId) player.playVideo();
+        else playContextIndex(playbackContext.currentIndex);
+        return;
+      }
+      if (state.currentTrack < 0) { playTrack(0); return; }
+      player.playVideo();
     } catch(e) { toast('Não foi possível controlar a reprodução.'); }
   }
   function playlistAtEnd() {
@@ -1047,7 +1059,14 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       syncPlayingVideoMetadata();
       try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; } catch(e) {}
     } else if (event.data===YT.PlayerState.PAUSED) {
-      state.isPlaying=false; saveState(); render(); setStatus('Em pausa');
+      state.isPlaying=false; saveState();
+      // Não reconstruir o leitor a partir de state.currentTrack ao pausar.
+      // Mantém o contexto e a faixa atual da playlist/álbum visíveis.
+      $('playBtn').disabled=false;
+      $('playBtn').classList.remove('loading');
+      $('playBtn').textContent='▶';
+      $('playBtn').setAttribute('aria-label','Reproduzir');
+      updatePlaybackSource();renderQueue();setStatus('Em pausa');
       try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; } catch(e) {}
       if (document.hidden && !sessionPausing) resumeOnVisible=true; // o sistema/YouTube pausou com o ecrã bloqueado
       sessionPausing=false;
@@ -1068,7 +1087,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   function setupMediaSession() {
     if (!('mediaSession' in navigator)) return;
     const set = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, fn); } catch(e) {} };
-    set('play', () => { try { player.playVideo(); } catch(e) {} });
+    set('play', () => { try { const track=currentPlaybackTrack();const currentId=player?.getVideoData?.().video_id||'';if(playbackContext?.tracks?.length&&track&&currentId!==track.videoId)playContextIndex(playbackContext.currentIndex);else player.playVideo(); } catch(e) {} });
     set('pause', () => { sessionPausing = true; resumeOnVisible = false; try { player.pauseVideo(); } catch(e) {} });
     set('nexttrack', nextTrack); set('previoustrack', prevTrack);
     set('seekto', d => { try { if (d && Number.isFinite(d.seekTime)) player.seekTo(d.seekTime, true); } catch(e) {} });
