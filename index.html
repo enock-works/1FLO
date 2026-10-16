@@ -278,10 +278,13 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 .cancel{background:#35202C;color:#E9D9DF}
 .save{background:linear-gradient(110deg,var(--rose),var(--rose-2));color:#FFF8FA;box-shadow:0 8px 26px rgba(212,71,104,.2)}
 
+.ui-icon{width:18px;height:18px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.play-btn .ui-icon{width:25px;height:25px;vertical-align:0}.desktop-mini .ui-icon{width:17px;height:17px;vertical-align:0}.resume-bubble .ui-icon{width:20px;height:20px;vertical-align:0}.filter-btn .ui-icon{margin-right:5px}.desktop-mini-tool .ui-icon{width:16px;height:16px}.desktop-mini-control.primary .ui-icon{width:18px;height:18px}
 /* --- Mini-leitor desktop --- */
 .desktop-mini{position:fixed;right:18px;bottom:18px;z-index:16;width:340px;display:none;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #695073;border-radius:18px;background:linear-gradient(145deg,#21152A,#140F1D);box-shadow:0 18px 52px rgba(0,0,0,.48);color:var(--text);touch-action:none;user-select:none}.desktop-mini.show{display:grid}.desktop-mini.dragging{opacity:.86}.desktop-mini.minimized{width:210px;grid-template-columns:42px minmax(0,1fr) auto;padding:7px;border-radius:15px}.desktop-mini.minimized .desktop-mini-art{width:42px;height:42px}.desktop-mini.minimized .desktop-mini-artist,.desktop-mini.minimized .desktop-mini-extra,.desktop-mini.minimized .desktop-mini-secondary{display:none}.desktop-mini-art{width:58px;height:58px;border-radius:11px;object-fit:cover;background:#2A2035}.desktop-mini-copy{min-width:0}.desktop-mini-title{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.desktop-mini-artist{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}.desktop-mini-extra{font-size:10px;color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.desktop-mini-controls{display:flex;align-items:center;gap:5px}.desktop-mini button{border:0}.desktop-mini-control{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#2E2038;color:var(--text)}.desktop-mini-control.primary{background:linear-gradient(135deg,#C66BFF,#8F4DFF);color:#160D21;font-weight:900}.desktop-mini-secondary{display:flex;gap:4px;margin-left:4px}.desktop-mini-tool{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:transparent;color:var(--muted)}.desktop-mini-tool:hover,.desktop-mini-control:hover{filter:brightness(1.2)}@media(max-width:760px){.desktop-mini{display:none!important}}
 /* --- Bolha de retoma iOS --- */
 .resume-bubble{position:fixed;right:16px;bottom:calc(104px + env(safe-area-inset-bottom));z-index:19;display:none;align-items:center;gap:10px;max-width:min(330px,calc(100vw - 32px));padding:9px 11px 9px 9px;border:1px solid #7B4B75;border-radius:30px;background:linear-gradient(135deg,#2B1930,#1A1324);color:var(--text);box-shadow:0 12px 36px rgba(0,0,0,.46);touch-action:none;user-select:none}.resume-bubble.show{display:flex}.resume-bubble.dragging{opacity:.88;transition:none}.resume-bubble-art{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#2B2040;flex-shrink:0}.resume-bubble-copy{min-width:0;flex:1}.resume-bubble-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);font-weight:800}.resume-bubble-title{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.resume-bubble-time{font-size:11px;color:var(--muted);margin-top:2px}.resume-bubble-play,.resume-bubble-close{border:0;display:grid;place-items:center}.resume-bubble-play{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#C66BFF,#8F4DFF);color:#160D21;font-weight:900;font-size:18px;flex-shrink:0}.resume-bubble-close{width:28px;height:28px;background:transparent;color:var(--muted);font-size:18px;border-radius:50%}.resume-bubble:focus-within{outline:2px solid var(--cyan);outline-offset:2px}@media(max-width:430px){.resume-bubble{left:12px;right:12px;max-width:none}}
+/* --- Instalação PWA --- */
+.install-card{display:none;align-items:center;gap:14px;margin:14px auto 4px;max-width:960px;padding:14px 16px;border:1px solid #65435F;border-radius:18px;background:linear-gradient(135deg,rgba(180,92,255,.12),rgba(212,71,104,.08)),var(--surface);box-shadow:0 10px 28px rgba(0,0,0,.18)}.install-card.show{display:flex}.install-card-icon{width:54px;height:54px;border-radius:14px;object-fit:cover;flex-shrink:0}.install-card-copy{min-width:0;flex:1}.install-card-title{font-weight:850;font-size:15px}.install-card-text{font-size:12px;color:var(--muted);line-height:1.45;margin-top:4px}.install-card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.install-primary{border:0;border-radius:13px;background:linear-gradient(110deg,var(--rose),var(--rose-2));color:#fff;font-weight:800;padding:11px 15px}.install-later{border:1px solid var(--surface-line);border-radius:13px;background:transparent;color:var(--muted);padding:10px 12px}.install-link{border:0;background:transparent;color:var(--cyan);font-weight:700;padding:7px}.install-help{display:none;max-width:960px;margin:8px auto 4px;padding:14px 16px;border-radius:16px;border:1px solid var(--surface-line);background:var(--surface-2);font-size:12px;color:var(--soft-text);line-height:1.55}.install-help.show{display:block}.install-help strong{color:var(--text)}.install-help ol{margin:8px 0 0 20px;padding:0}.install-installed{color:var(--cyan)}@media(max-width:620px){.install-card{margin:10px 12px 4px;align-items:flex-start;display:none;position:relative}.install-card.show{display:grid;grid-template-columns:48px 1fr}.install-card-icon{width:48px;height:48px}.install-card-actions{grid-column:1/-1;width:100%}.install-primary{flex:1}.install-help{margin:8px 12px 4px}}
 /* --- Aviso --- */
 .toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,10px);background:var(--surface);border:1px solid var(--surface-line);color:#FFF0F4;padding:11px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:20;max-width:90vw;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;gap:12px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -307,6 +310,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 </head>
 <body>
 <header class="topbar"><div class="brand logo-custom" aria-label="1FLŌ"><span class="brand-word"><span class="logo-one">1</span><span class="logo-f">F</span><span class="logo-l">L</span><span class="logo-o">Ō</span></span></div><div class="top-label">A tua música, à tua maneira</div></header>
+<section class="install-card" id="installCard" aria-label="Instalar 1FLŌ">
+  <img class="install-card-icon" src="./icon-192.png" alt="">
+  <div class="install-card-copy"><div class="install-card-title">Instala o 1FLŌ neste dispositivo</div><div class="install-card-text" id="installCardText">Acede mais depressa à tua música a partir do ambiente de trabalho ou do ecrã principal.</div></div>
+  <div class="install-card-actions"><button class="install-primary" id="installAppBtn" type="button">↓ Instalar 1FLŌ</button><button class="install-later" id="installLaterBtn" type="button">Agora não</button><button class="install-link" id="installHelpBtn" type="button">Como instalar?</button></div>
+</section>
+<section class="install-help" id="installHelp" aria-live="polite"></section>
 <main>
   <div class="banner" id="restoreBanner" role="alert">
     <strong>Encontrei a tua biblioteca</strong>
@@ -348,12 +357,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     <div class="controls">
       <button class="icon-btn" id="shuffleBtn" aria-label="Aleatório" title="Aleatório"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 7h2.5c4.5 0 6.5 10 11 10H21M16 16l5 1v4M4 17h2.5c2 0 3.5-2 4.7-4M14 8c1-1 2-1 3.5-1H21"/></svg></button>
       <button class="icon-btn" id="prevBtn" aria-label="Anterior" title="Anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M19 6 8 12l11 6V6Z"/></svg></button>
-      <button class="play-btn" id="playBtn" aria-label="Reproduzir">▶</button>
+      <button class="play-btn" id="playBtn" aria-label="Reproduzir"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8 17 12l-8 5.2V6.8Z"/></svg></button>
       <button class="icon-btn" id="nextBtn" aria-label="Seguinte" title="Seguinte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M5 6l11 6-11 6V6Z"/></svg></button>
       <button class="icon-btn" id="repeatBtn" aria-label="Repetir faixa" title="Repetir faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg></button>
     </div>
     <div class="status" id="status" role="status">Pronto quando estiveres</div>
-    <div class="playback-source"><div class="source-copy">A tocar a partir de<span class="source-name" id="playbackSource">Nenhum contexto ativo</span></div><div style="display:flex;gap:7px;align-items:center"><button class="filter-btn" id="miniPlayerBtn" type="button">▣ Mini-leitor</button><button class="filter-btn queue-trigger" id="queueBtn" type="button">☷ Fila <span id="queueCount">0</span></button></div></div>
+    <div class="playback-source"><div class="source-copy">A tocar a partir de<span class="source-name" id="playbackSource">Nenhum contexto ativo</span></div><div style="display:flex;gap:7px;align-items:center"><button class="filter-btn" id="miniPlayerBtn" type="button"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M12.5 12h5v4h-5z"/></svg>Mini-leitor</button><button class="filter-btn queue-trigger" id="queueBtn" type="button"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h10M9 12h10M9 17h10"/><circle cx="5" cy="7" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="17" r="1"/></svg>Fila <span id="queueCount">0</span></button></div></div>
   </section>
   <div class="youtube-search-actions" aria-label="Adicionar à biblioteca">
     <button class="youtube-primary-action" id="addBtn" type="button">＋ Adicionar Link</button>
@@ -419,12 +428,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
 <div class="desktop-mini" id="desktopMini" role="region" aria-label="Mini-leitor 1FLŌ" hidden>
   <img class="desktop-mini-art" id="desktopMiniArt" alt="">
   <div class="desktop-mini-copy"><div class="desktop-mini-title" id="desktopMiniTitle">Nada a reproduzir</div><div class="desktop-mini-artist" id="desktopMiniArtist"></div><div class="desktop-mini-extra" id="desktopMiniSource"></div></div>
-  <div class="desktop-mini-controls"><button class="desktop-mini-control" id="desktopMiniPrev" type="button" aria-label="Anterior">◀</button><button class="desktop-mini-control primary" id="desktopMiniPlay" type="button" aria-label="Reproduzir">▶</button><button class="desktop-mini-control" id="desktopMiniNext" type="button" aria-label="Seguinte">▶▶</button><div class="desktop-mini-secondary"><button class="desktop-mini-tool" id="desktopMiniQueue" type="button" aria-label="Fila">☷</button><button class="desktop-mini-tool" id="desktopMiniPiP" type="button" aria-label="Abrir sempre visível sobre outras aplicações" title="Sempre visível">▣</button><button class="desktop-mini-tool" id="desktopMiniCollapse" type="button" aria-label="Minimizar">−</button><button class="desktop-mini-tool" id="desktopMiniClose" type="button" aria-label="Fechar">×</button></div></div>
+  <div class="desktop-mini-controls"><button class="desktop-mini-control" id="desktopMiniPrev" type="button" aria-label="Anterior"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6v12M18 7l-8 5 8 5V7Z"/></svg></button><button class="desktop-mini-control primary" id="desktopMiniPlay" type="button" aria-label="Reproduzir"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8 17 12l-8 5.2V6.8Z"/></svg></button><button class="desktop-mini-control" id="desktopMiniNext" type="button" aria-label="Seguinte"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 6v12M6 7l8 5-8 5V7Z"/></svg></button><div class="desktop-mini-secondary"><button class="desktop-mini-tool" id="desktopMiniQueue" type="button" aria-label="Fila"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h10M9 12h10M9 17h10"/><circle cx="5" cy="7" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="17" r="1"/></svg></button><button class="desktop-mini-tool" id="desktopMiniPiP" type="button" aria-label="Abrir sempre visível sobre outras aplicações" title="Sempre visível"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M12.5 12h5v4h-5z"/></svg></button><button class="desktop-mini-tool" id="desktopMiniCollapse" type="button" aria-label="Minimizar">−</button><button class="desktop-mini-tool" id="desktopMiniClose" type="button" aria-label="Fechar">×</button></div></div>
 </div>
 <div class="resume-bubble" id="resumeBubble" role="region" aria-label="Retomar reprodução" hidden>
   <img class="resume-bubble-art" id="resumeBubbleArt" alt="">
   <div class="resume-bubble-copy"><div class="resume-bubble-label">Retomar reprodução</div><div class="resume-bubble-title" id="resumeBubbleTitle">Música interrompida</div><div class="resume-bubble-time" id="resumeBubbleTime">Retomar</div></div>
-  <button class="resume-bubble-play" id="resumeBubblePlay" type="button" aria-label="Retomar reprodução">▶</button>
+  <button class="resume-bubble-play" id="resumeBubblePlay" type="button" aria-label="Retomar reprodução"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8 17 12l-8 5.2V6.8Z"/></svg></button>
   <button class="resume-bubble-close" id="resumeBubbleClose" type="button" aria-label="Fechar bolha">×</button>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -443,6 +452,9 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const YOUTUBE_DATA_API_KEY = 'AIzaSyDbTzVKoJBTkJZggfzi-yi2cCaK7AA5mZ0';
   const SYNC_TABLE='user_libraries', LOCAL_MODIFIED_KEY='musicflow_library_modified_v1';
   const $ = id => document.getElementById(id);
+  const ICON_PLAY=`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.8 17 12l-8 5.2V6.8Z"/></svg>`;
+  const ICON_PAUSE=`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12"/></svg>`;
+  function setPlayIcon(el,playing=false){if(!el)return;el.innerHTML=playing?ICON_PAUSE:ICON_PLAY;}
   const state = { tracks: [], deletedItems: {}, schemaVersion: 2, currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
   let libraryFilter = 'all', searchTerm = '', artistSort = false, manualQueue = [], playbackContext = null, preparedVideoId = '';
   let player = null, playerReady = false, metaPlayer = null, metaPlayerReady = false, progressTimer = null, toastTimer = null, seeking = false;
@@ -451,6 +463,36 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   let lastLibrarySnapshot='', cloud=null, authUser=null, syncTimer=null, syncing=false;
   let sharedPlaylists=[], activeShared=null;
 
+  let deferredInstallPrompt=null;
+  const INSTALL_DISMISS_KEY='1flo_install_dismissed_until';
+  function isStandaloneApp(){return window.matchMedia?.('(display-mode: standalone)').matches===true||navigator.standalone===true}
+  function isIOSDevice(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+  function installDismissed(){try{return Date.now()<Number(localStorage.getItem(INSTALL_DISMISS_KEY)||0)}catch(e){return false}}
+  function setInstallDismissed(days=7){try{localStorage.setItem(INSTALL_DISMISS_KEY,String(Date.now()+days*86400000))}catch(e){}}
+  function hideInstallCTA(){ $('installCard').classList.remove('show');$('installHelp').classList.remove('show') }
+  function installInstructions(){
+    const help=$('installHelp');
+    if(isIOSDevice())help.innerHTML='<strong>Instalar no iPhone/iPad</strong><ol><li>Abre o 1FLŌ no Safari.</li><li>Toca em <strong>Partilhar</strong>.</li><li>Escolhe <strong>Adicionar ao ecrã principal</strong>.</li><li>Confirma em <strong>Adicionar</strong>.</li></ol>';
+    else help.innerHTML='<strong>Instalar no computador ou Android</strong><p>Usa o botão <strong>Instalar 1FLŌ</strong>. Se o browser não apresentar o diálogo, abre o menu do browser e procura a opção para instalar/adicionar esta aplicação.</p>';
+    help.classList.toggle('show');
+  }
+  function refreshInstallCTA(force=false){
+    if(isStandaloneApp()){hideInstallCTA();return}
+    if(!force&&installDismissed()){hideInstallCTA();return}
+    const card=$('installCard'),button=$('installAppBtn'),text=$('installCardText');card.classList.add('show');
+    if(deferredInstallPrompt){button.hidden=false;button.textContent='↓ Instalar 1FLŌ';text.textContent='Instala a aplicação para abrir o 1FLŌ diretamente a partir deste dispositivo.';return}
+    if(isIOSDevice()){button.hidden=false;button.textContent='↓ Ver como instalar';text.textContent='Adiciona o 1FLŌ ao ecrã principal para o abrir como aplicação.';return}
+    button.hidden=false;button.textContent='↓ Instalar 1FLŌ';text.textContent='O 1FLŌ pode ser instalado no computador ou telemóvel quando o browser suporta instalação de PWA.';
+  }
+  async function installApp(){
+    if(isStandaloneApp()){hideInstallCTA();toast('O 1FLŌ já está instalado.');return}
+    if(deferredInstallPrompt){
+      const prompt=deferredInstallPrompt;deferredInstallPrompt=null;try{await prompt.prompt();const choice=await prompt.userChoice;if(choice?.outcome==='accepted'){hideInstallCTA();return}}catch(e){}refreshInstallCTA(true);return;
+    }
+    installInstructions();
+  }
+  window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;refreshInstallCTA(true)});
+  window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;hideInstallCTA();try{localStorage.removeItem(INSTALL_DISMISS_KEY)}catch(e){}toast('1FLŌ instalado neste dispositivo.')});
   function toast(message, actionLabel, onAction) {
     const el = $('toast'); el.replaceChildren(document.createTextNode(message));
     el.classList.toggle('has-action', !!onAction);
@@ -773,7 +815,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if (track && track.videoId) setArtwork($('currentArt'), thumb(track.videoId));
     else if(track && track.playlistId && track.items && track.items[0]) setArtwork($('currentArt'), thumb(track.items[0].videoId));
     else setArtwork($('currentArt'), PLACEHOLDER_IMAGE);
-    $('playBtn').textContent = state.isPlaying ? 'Ⅱ' : '▶';
+    setPlayIcon($('playBtn'),state.isPlaying);
     $('playBtn').setAttribute('aria-label', state.isPlaying ? 'Pausar' : 'Reproduzir');
     $('shuffleBtn').classList.toggle('active', state.shuffle);
     $('repeatBtn').classList.toggle('active', state.repeat); updatePlaybackSource(); updateDesktopMini();
@@ -1083,11 +1125,11 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       // Mantém o contexto e a faixa atual da playlist/álbum visíveis.
       $('playBtn').disabled=false;
       $('playBtn').classList.remove('loading');
-      $('playBtn').textContent='▶';
+      setPlayIcon($('playBtn'),false);
       $('playBtn').setAttribute('aria-label','Reproduzir');
       updatePlaybackSource();renderQueue();setStatus('Em pausa');
       try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; } catch(e) {}
-      if(document.hidden&&!sessionPausing){resumeOnVisible=true;iosSuspendedAt=Date.now();capturePlaybackSnapshot('youtube-paused-hidden')} // pausa causada pelo iOS
+      if(document.hidden&&!sessionPausing&&shouldRecoverFromVisibility()){resumeOnVisible=true;iosSuspendedAt=Date.now();capturePlaybackSnapshot('youtube-paused-hidden')}
       sessionPausing=false;
     } else if (event.data===YT.PlayerState.ENDED) { state.isPlaying=false;nextTrack();
     } else if (event.data===YT.PlayerState.BUFFERING){$('playBtn').disabled=true;$('playBtn').classList.add('loading');setStatus('A carregar…')}
@@ -1173,7 +1215,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       setTimeout(()=>{
         let playing=false;try{playing=player.getPlayerState?.()===1}catch(e){}
         if(!playing){
-          state.isPlaying=false;$('playBtn').disabled=false;$('playBtn').classList.remove('loading');$('playBtn').textContent='▶';
+          state.isPlaying=false;$('playBtn').disabled=false;$('playBtn').classList.remove('loading');setPlayIcon($('playBtn'),false);
           setStatus('O iPhone suspendeu o YouTube. Usa a bolha para retomar na mesma posição.');
           showResumeBubble(readPlaybackSnapshot());
           toast('Toca na bolha para retomar na mesma música e posição.');
@@ -1183,10 +1225,12 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   }
   let desktopMiniPinned=false,desktopMiniDismissed=false,desktopMiniObserver=null,pipWindow=null;
   function desktopMode(){return matchMedia('(min-width:761px)').matches}
+  function likelyIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+  function shouldRecoverFromVisibility(){return likelyIOS()||!desktopMode()}
   function updateDesktopMini(){
     const mini=$('desktopMini'),track=currentPlaybackTrack();if(!mini||!track)return;
     $('desktopMiniTitle').textContent=track.title||'Música';$('desktopMiniArtist').textContent=track.artist||'';$('desktopMiniSource').textContent=playbackContext?.name?'A partir de '+playbackContext.name:'Biblioteca pessoal';
-    if(track.videoId)setArtwork($('desktopMiniArt'),thumb(track.videoId));$('desktopMiniPlay').textContent=state.isPlaying?'Ⅱ':'▶';$('desktopMiniPlay').setAttribute('aria-label',state.isPlaying?'Pausar':'Reproduzir');syncDocumentPiP(track);
+    if(track.videoId)setArtwork($('desktopMiniArt'),thumb(track.videoId));setPlayIcon($('desktopMiniPlay'),state.isPlaying);$('desktopMiniPlay').setAttribute('aria-label',state.isPlaying?'Pausar':'Reproduzir');syncDocumentPiP(track);
   }
   function showDesktopMini(force=false){if(!desktopMode()||desktopMiniDismissed||(!force&&!currentPlaybackTrack()))return;const mini=$('desktopMini');mini.hidden=false;mini.classList.add('show');updateDesktopMini()}
   function hideDesktopMini(){const mini=$('desktopMini');mini.classList.remove('show');mini.hidden=true}
@@ -1205,14 +1249,14 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if(!('documentPictureInPicture'in window)){toast('O browser não suporta o mini-leitor sempre visível personalizado. Usa o PiP nativo do Brave.');return}
     if(pipWindow&&!pipWindow.closed){pipWindow.focus();return}
     try{
-      pipWindow=await window.documentPictureInPicture.requestWindow({width:360,height:150});
-      pipWindow.document.head.innerHTML='<title>1FLŌ</title><style>body{margin:0;background:#15101d;color:#f8f5ff;font-family:Arial,sans-serif;display:grid;place-items:center;height:100vh}.p{width:calc(100% - 20px);display:grid;grid-template-columns:64px 1fr;gap:11px;align-items:center}.art{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#292033}.title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.artist,.source{font-size:12px;color:#b8aacd;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.controls{display:flex;gap:8px;margin-top:10px}button{border:0;border-radius:50%;width:36px;height:36px;background:#30213a;color:#fff;font-size:15px}.main{background:#a95cff;color:#160d21;font-weight:900}</style>';
-      pipWindow.document.body.innerHTML='<div class="p"><img class="art" id="a"><div><div class="title" id="t"></div><div class="artist" id="r"></div><div class="source" id="s"></div><div class="controls"><button id="prev">◀</button><button class="main" id="play">▶</button><button id="next">▶▶</button><button id="queue">☷</button></div></div></div>';
+      pipWindow=await window.documentPictureInPicture.requestWindow({width:300,height:122});
+      pipWindow.document.head.innerHTML='<title>1FLŌ</title><meta name="theme-color" content="#17131d"><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17131d;color:#f8f5ff;font-family:Arial,sans-serif}body{display:grid;place-items:center}.p{width:100%;height:100%;padding:8px 10px;display:grid;grid-template-columns:54px minmax(0,1fr);gap:10px;align-items:center;background:linear-gradient(135deg,#17131d,#211426)}.art{width:54px;height:54px;border-radius:11px;object-fit:cover;background:#292033;box-shadow:0 4px 14px #0006}.copy{min-width:0}.title{font-size:14px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.artist{font-size:11px;color:#d0bddc;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.source{font-size:9px;color:#7fdff3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.controls{display:flex;align-items:center;gap:5px;margin-top:6px}button{border:1px solid #49314f;border-radius:50%;width:29px;height:29px;padding:0;display:grid;place-items:center;background:#2a1c31;color:#f8f5ff;line-height:1;cursor:pointer}button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.main{width:32px;height:32px;background:linear-gradient(135deg,#c66bff,#9151ee);border-color:transparent;color:#160d21;font-weight:900}.queue{margin-left:2px;color:#c8b3d4;background:#211725}@media(max-width:270px){.p{grid-template-columns:44px minmax(0,1fr);padding:6px 8px}.art{width:44px;height:44px}.source{display:none}.controls{margin-top:4px}button{width:27px;height:27px}.main{width:30px;height:30px}}</style>';
+      pipWindow.document.body.innerHTML='<div class="p"><img class="art" id="a"><div class="copy"><div class="title" id="t"></div><div class="artist" id="r"></div><div class="source" id="s"></div><div class="controls"><button id="prev" title="Anterior"><svg viewBox="0 0 24 24"><path d="M7 6v12M18 7l-8 5 8 5V7Z"/></svg></button><button class="main" id="play" title="Reproduzir/Pausar"><svg viewBox="0 0 24 24"><path d="M9 6.8 17 12l-8 5.2V6.8Z"/></svg></button><button id="next" title="Seguinte"><svg viewBox="0 0 24 24"><path d="M17 6v12M6 7l8 5-8 5V7Z"/></svg></button><button class="queue" id="queue" title="Fila"><svg viewBox="0 0 24 24"><path d="M9 7h10M9 12h10M9 17h10"/><circle cx="5" cy="7" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="17" r="1"/></svg></button></div></div></div>';
       pipWindow.document.getElementById('prev').onclick=prevTrack;pipWindow.document.getElementById('play').onclick=togglePlay;pipWindow.document.getElementById('next').onclick=nextTrack;pipWindow.document.getElementById('queue').onclick=()=>{pipWindow.close();openQueue()};pipWindow.addEventListener('pagehide',()=>{pipWindow=null});updateDesktopMini();
     }catch(e){toast('Não foi possível abrir o mini-leitor sempre visível.')}
   }
   function syncDocumentPiP(track=currentPlaybackTrack()){
-    if(!pipWindow||pipWindow.closed||!track)return;const d=pipWindow.document;d.getElementById('t').textContent=track.title||'Música';d.getElementById('r').textContent=track.artist||'';d.getElementById('s').textContent=playbackContext?.name||'1FLŌ';d.getElementById('play').textContent=state.isPlaying?'Ⅱ':'▶';if(track.videoId)d.getElementById('a').src=thumb(track.videoId)
+    if(!pipWindow||pipWindow.closed||!track)return;const d=pipWindow.document;d.getElementById('t').textContent=track.title||'Música';d.getElementById('r').textContent=track.artist||'';d.getElementById('s').textContent=playbackContext?.name||'1FLŌ';d.getElementById('play').innerHTML=state.isPlaying?'<svg viewBox="0 0 24 24"><path d="M8 6v12M16 6v12"/></svg>':'<svg viewBox="0 0 24 24"><path d="M9 6.8 17 12l-8 5.2V6.8Z"/></svg>';if(track.videoId)d.getElementById('a').src=thumb(track.videoId)
   }
   function durationLabel(seconds){return formatTime(Math.max(0,Number(seconds)||0))}
   function updateMediaSessionFromSnapshot(snapshot,playing=false){
@@ -1253,7 +1297,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   function setupMediaSession() {
     if(!('mediaSession' in navigator))return;
     const set=(action,fn)=>{try{navigator.mediaSession.setActionHandler(action,fn)}catch(e){}};
-    set('play',()=>{const snapshot=readPlaybackSnapshot();if(snapshot){pendingResumeSnapshot=snapshot;resumeFromBubble();return}try{player.playVideo()}catch(e){}});
+    set('play',()=>{const snapshot=readPlaybackSnapshot();if(shouldRecoverFromVisibility()&&snapshot){pendingResumeSnapshot=snapshot;resumeFromBubble();return}try{player.playVideo()}catch(e){}});
     set('pause',()=>{sessionPausing=true;resumeOnVisible=false;capturePlaybackSnapshot('media-session-pause');try{player.pauseVideo()}catch(e){}});
     set('nexttrack',()=>{hideResumeBubble();nextTrack()});
     set('previoustrack',()=>{hideResumeBubble();prevTrack()});
@@ -1263,12 +1307,24 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     set('stop',()=>{resumeOnVisible=false;sessionPausing=true;try{player.stopVideo()}catch(e){}state.isPlaying=false;hideResumeBubble();render()});
   }
   // O iOS pode congelar ou terminar a PWA. Guardamos faixa, contexto e posição antes da suspensão.
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')handleAppHidden('visibilitychange');else handleAppVisible()});
-  window.addEventListener('pagehide',()=>handleAppHidden('pagehide'));
-  window.addEventListener('pageshow',handleAppVisible);
-  window.addEventListener('focus',handleAppVisible);
-  document.addEventListener('freeze',()=>handleAppHidden('freeze'));
-  document.addEventListener('resume',handleAppVisible);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden'){
+      if(shouldRecoverFromVisibility())handleAppHidden('visibilitychange');
+      else if(state.isPlaying)capturePlaybackSnapshot('desktop-tab-hidden');
+      return;
+    }
+    if(shouldRecoverFromVisibility()){handleAppVisible();return;}
+    // No PC, trocar de separador não deve reconstruir o vídeo nem o contexto.
+    // Se o browser tiver colocado o iframe em pausa, tenta apenas continuar o mesmo player.
+    if(state.isPlaying&&playerReady&&player){
+      try{const st=player.getPlayerState?.();if(st===2||st===5)player.playVideo()}catch(e){}
+    }
+  });
+  window.addEventListener('pagehide',()=>{if(shouldRecoverFromVisibility())handleAppHidden('pagehide')});
+  window.addEventListener('pageshow',()=>{if(shouldRecoverFromVisibility())handleAppVisible()});
+  window.addEventListener('focus',()=>{if(shouldRecoverFromVisibility())handleAppVisible()});
+  document.addEventListener('freeze',()=>{if(shouldRecoverFromVisibility())handleAppHidden('freeze')});
+  document.addEventListener('resume',()=>{if(shouldRecoverFromVisibility())handleAppVisible()});
   function initYouTube() {
     // A callback é definida antes de carregar a API para evitar a corrida de inicialização.
     window.onYouTubeIframeAPIReady = function() {
@@ -1609,6 +1665,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   $('youtubeArtistQuery').addEventListener('keydown',e=>{if(e.key==='Enter')searchYouTubeArtists();});
   $('youtubeBackBtn').addEventListener('click',searchYouTubeArtists);
   $('queueBtn').addEventListener('click',openQueue);$('closeQueueBtn').addEventListener('click',closeQueue);$('queueBackdrop').addEventListener('click',e=>{if(e.target===$('queueBackdrop'))closeQueue()});
+  $('installAppBtn').addEventListener('click',installApp);$('installHelpBtn').addEventListener('click',installInstructions);$('installLaterBtn').addEventListener('click',()=>{setInstallDismissed(7);hideInstallCTA()});refreshInstallCTA();
   $('resumeBubblePlay').addEventListener('click',resumeFromBubble);$('resumeBubbleClose').addEventListener('click',()=>{hideResumeBubble();try{localStorage.removeItem(PLAYBACK_SNAPSHOT_KEY)}catch(e){}});setupResumeBubbleDrag();
   $('miniPlayerBtn').addEventListener('click',()=>{desktopMiniDismissed=false;desktopMiniPinned=!desktopMiniPinned;if(desktopMiniPinned)showDesktopMini(true);else hideDesktopMini()});
   $('desktopMiniPlay').addEventListener('click',togglePlay);$('desktopMiniPrev').addEventListener('click',prevTrack);$('desktopMiniNext').addEventListener('click',nextTrack);$('desktopMiniQueue').addEventListener('click',openQueue);$('desktopMiniPiP').addEventListener('click',openDocumentPiP);$('desktopMiniCollapse').addEventListener('click',()=>$('desktopMini').classList.toggle('minimized'));$('desktopMiniClose').addEventListener('click',()=>{desktopMiniDismissed=true;desktopMiniPinned=false;hideDesktopMini()});setupDesktopMiniDrag();setupDesktopMiniVisibility();
