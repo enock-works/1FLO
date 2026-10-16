@@ -431,7 +431,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   const state = { tracks: [], deletedItems: {}, schemaVersion: 2, currentTrack: -1, isPlaying: false, shuffle: false, repeat: false, volume: 70 };
   let libraryFilter = 'all', searchTerm = '', artistSort = false, manualQueue = [], playbackContext = null, preparedVideoId = '';
   let player = null, playerReady = false, metaPlayer = null, metaPlayerReady = false, progressTimer = null, toastTimer = null, seeking = false;
-  let resumeOnVisible = false, sessionPausing = false, expandedPlaylistId = null, metadataLoadToken = 0, editingIndex = -1, lastFocus = null, errorStreak = 0;
+  let resumeOnVisible = false, sessionPausing = false, iosSuspendedAt = 0, pendingResumeSnapshot = null, expandedPlaylistId = null, metadataLoadToken = 0, editingIndex = -1, lastFocus = null, errorStreak = 0;
   let lastSavedSnapshot = '';
   let lastLibrarySnapshot='', cloud=null, authUser=null, syncTimer=null, syncing=false;
   let sharedPlaylists=[], activeShared=null;
@@ -1059,7 +1059,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
   function onPlayerStateChange(event) {
     if (!window.YT) return;
     if (event.data===YT.PlayerState.PLAYING) {
-      errorStreak=0; state.isPlaying=true;preparedVideoId=player?.getVideoData?.().video_id||preparedVideoId;$('playBtn').disabled=false;$('playBtn').classList.remove('loading');setStatus('A reproduzir'); saveState(); render();renderQueue();
+      errorStreak=0; state.isPlaying=true;preparedVideoId=player?.getVideoData?.().video_id||preparedVideoId;capturePlaybackSnapshot('playing');$('playBtn').disabled=false;$('playBtn').classList.remove('loading');setStatus('A reproduzir'); saveState(); render();renderQueue();
       syncPlayingVideoMetadata();
       try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; } catch(e) {}
     } else if (event.data===YT.PlayerState.PAUSED) {
@@ -1072,7 +1072,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
       $('playBtn').setAttribute('aria-label','Reproduzir');
       updatePlaybackSource();renderQueue();setStatus('Em pausa');
       try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; } catch(e) {}
-      if (document.hidden && !sessionPausing) resumeOnVisible=true; // o sistema/YouTube pausou com o ecrã bloqueado
+      if(document.hidden&&!sessionPausing){resumeOnVisible=true;iosSuspendedAt=Date.now();capturePlaybackSnapshot('youtube-paused-hidden')} // pausa causada pelo iOS
       sessionPausing=false;
     } else if (event.data===YT.PlayerState.ENDED) { state.isPlaying=false;nextTrack();
     } else if (event.data===YT.PlayerState.BUFFERING){$('playBtn').disabled=true;$('playBtn').classList.add('loading');setStatus('A carregar…')}
@@ -1088,27 +1088,98 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     } else if (code===153) toast('O YouTube recusou a origem da página. Abre a app por https (não a partir de um ficheiro local).');
     else toast('Vídeo indisponível, restrito ou não incorporável.');
   }
+  const PLAYBACK_SNAPSHOT_KEY='1flo_playback_snapshot_v2';
+  function capturePlaybackSnapshot(reason='lifecycle'){
+    const track=currentPlaybackTrack();
+    if(!track?.videoId)return null;
+    let position=0,duration=0,playerState=-1;
+    try{position=Number(player?.getCurrentTime?.())||0;duration=Number(player?.getDuration?.())||0;playerState=Number(player?.getPlayerState?.())}catch(e){}
+    const snapshot={
+      reason,videoId:track.videoId,title:track.title||'',artist:track.artist||'',
+      position,duration,wasPlaying:!!state.isPlaying||playerState===1||playerState===3,
+      context:playbackContext?{type:playbackContext.type,name:playbackContext.name,tracks:playbackContext.tracks,currentIndex:playbackContext.currentIndex}:null,
+      libraryIndex:state.currentTrack,savedAt:Date.now()
+    };
+    try{localStorage.setItem(PLAYBACK_SNAPSHOT_KEY,JSON.stringify(snapshot))}catch(e){}
+    pendingResumeSnapshot=snapshot;
+    return snapshot;
+  }
+  function readPlaybackSnapshot(){
+    try{const value=JSON.parse(localStorage.getItem(PLAYBACK_SNAPSHOT_KEY)||'null');if(!value?.videoId)return null;if(Date.now()-Number(value.savedAt||0)>12*60*60*1000)return null;return value}catch(e){return null}
+  }
+  function restorePlaybackContext(snapshot){
+    if(snapshot?.context?.tracks?.length){
+      playbackContext={type:snapshot.context.type||'restored',name:snapshot.context.name||'Lista retomada',tracks:snapshot.context.tracks,currentIndex:Math.max(0,Math.min(Number(snapshot.context.currentIndex)||0,snapshot.context.tracks.length-1))};
+    }else if(Number.isInteger(snapshot?.libraryIndex)&&state.tracks[snapshot.libraryIndex]){
+      state.currentTrack=snapshot.libraryIndex;
+    }
+    render();renderQueue();
+  }
+  function setResumeMetadata(snapshot){
+    if(!('mediaSession' in navigator)||!snapshot)return;
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:snapshot.title||'1FLŌ',artist:snapshot.artist||'',album:snapshot.context?.name||'1FLŌ',artwork:snapshot.videoId?[{src:thumb(snapshot.videoId),sizes:'480x360',type:'image/jpeg'}]:[]})}catch(e){}
+  }
+  function attemptResumeAfterIOS({autoplay=true}={}){
+    if(!playerReady||!player)return false;
+    const snapshot=pendingResumeSnapshot||readPlaybackSnapshot();
+    if(!snapshot?.videoId)return false;
+    pendingResumeSnapshot=snapshot;restorePlaybackContext(snapshot);setResumeMetadata(snapshot);
+    const startSeconds=Math.max(0,Number(snapshot.position)||0);
+    try{
+      const currentId=player.getVideoData?.().video_id||'';
+      if(currentId!==snapshot.videoId){
+        player.cueVideoById({videoId:snapshot.videoId,startSeconds});
+        preparedVideoId=snapshot.videoId;
+      }else if(Math.abs((player.getCurrentTime?.()||0)-startSeconds)>4){
+        player.seekTo(startSeconds,true);
+      }
+      player.setVolume(state.volume);
+      $('currentTitle').textContent=snapshot.title||'Faixa retomada';
+      $('currentArtist').textContent=snapshot.artist||'';
+      setArtwork($('currentArt'),thumb(snapshot.videoId));
+      if(autoplay&&snapshot.wasPlaying){
+        const result=player.playVideo();
+        setStatus('A retomar no ponto onde parou…');
+      }else{
+        setStatus('Pronto para retomar no ponto onde parou.');
+      }
+      return true;
+    }catch(e){setStatus('Não foi possível preparar a retoma.');return false}
+  }
+  function handleAppHidden(reason){
+    if(state.isPlaying){resumeOnVisible=true;iosSuspendedAt=Date.now();capturePlaybackSnapshot(reason)}
+  }
+  function handleAppVisible(){
+    if(!resumeOnVisible&&!readPlaybackSnapshot()?.wasPlaying)return;
+    resumeOnVisible=false;
+    setTimeout(()=>{
+      const resumed=attemptResumeAfterIOS({autoplay:true});
+      if(!resumed)return;
+      setTimeout(()=>{
+        let playing=false;try{playing=player.getPlayerState?.()===1}catch(e){}
+        if(!playing){
+          state.isPlaying=false;$('playBtn').disabled=false;$('playBtn').classList.remove('loading');$('playBtn').textContent='▶';
+          setStatus('O iPhone suspendeu o YouTube. Toca ▶ para retomar na mesma posição.');
+          toast('Pronto para retomar na mesma música e posição.');
+        }
+      },1400);
+    },250);
+  }
   function setupMediaSession() {
     if (!('mediaSession' in navigator)) return;
     const set = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, fn); } catch(e) {} };
-    set('play', () => { try { const track=currentPlaybackTrack();const currentId=player?.getVideoData?.().video_id||'';if(playbackContext?.tracks?.length&&track&&currentId!==track.videoId)playContextIndex(playbackContext.currentIndex);else player.playVideo(); } catch(e) {} });
+    set('play',()=>{try{const snapshot=readPlaybackSnapshot();const track=currentPlaybackTrack();const currentId=player?.getVideoData?.().video_id||'';if(snapshot?.videoId&&currentId!==snapshot.videoId){pendingResumeSnapshot=snapshot;attemptResumeAfterIOS({autoplay:true});return}if(playbackContext?.tracks?.length&&track&&currentId!==track.videoId)playContextIndex(playbackContext.currentIndex);else player.playVideo()}catch(e){}});
     set('pause', () => { sessionPausing = true; resumeOnVisible = false; try { player.pauseVideo(); } catch(e) {} });
     set('nexttrack', nextTrack); set('previoustrack', prevTrack);
     set('seekto', d => { try { if (d && Number.isFinite(d.seekTime)) player.seekTo(d.seekTime, true); } catch(e) {} });
   }
-  // Ao voltar à app (desbloquear/trocar de separador) retoma se foi pausada pelo sistema, não por ti.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') { if (state.isPlaying) resumeOnVisible = true; return; }
-    if (!resumeOnVisible || !playerReady || !player) return;
-    resumeOnVisible = false;
-    setTimeout(() => {
-      try {
-        const st = player.getPlayerState ? player.getPlayerState() : -1;
-        if (st !== 1 && st !== 3) player.playVideo();
-      } catch(e) {}
-      setTimeout(() => { if (!state.isPlaying && currentTrack()) setStatus('Pausado ao sair da app — toca ▶ para continuar.'); }, 1200);
-    }, 300);
-  });
+  // O iOS pode congelar ou terminar a PWA. Guardamos faixa, contexto e posição antes da suspensão.
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')handleAppHidden('visibilitychange');else handleAppVisible()});
+  window.addEventListener('pagehide',()=>handleAppHidden('pagehide'));
+  window.addEventListener('pageshow',handleAppVisible);
+  window.addEventListener('focus',handleAppVisible);
+  document.addEventListener('freeze',()=>handleAppHidden('freeze'));
+  document.addEventListener('resume',handleAppVisible);
   function initYouTube() {
     // A callback é definida antes de carregar a API para evitar a corrida de inicialização.
     window.onYouTubeIframeAPIReady = function() {
@@ -1465,7 +1536,7 @@ h1{font-size:27px;letter-spacing:-.8px;margin:5px 0 6px}
     if(!playerReady||!player||!player.getDuration)return;
     try {
       const d=player.getDuration(), c=player.getCurrentTime();
-      if(d>0){try{if('mediaSession' in navigator&&navigator.mediaSession.setPositionState)navigator.mediaSession.setPositionState({duration:d,position:Math.max(0,Math.min(c,d)),playbackRate:1});}catch(e){}if(!seeking)$('progress').value=String(Math.round(c/d*1000));$('elapsed').textContent=formatTime(c);$('duration').textContent=formatTime(d);}
+      if(d>0){try{if('mediaSession' in navigator&&navigator.mediaSession.setPositionState)navigator.mediaSession.setPositionState({duration:d,position:Math.max(0,Math.min(c,d)),playbackRate:1});}catch(e){}if(!seeking)$('progress').value=String(Math.round(c/d*1000));$('elapsed').textContent=formatTime(c);$('duration').textContent=formatTime(d);if(state.isPlaying&&Math.floor(c)%5===0)capturePlaybackSnapshot('progress');}
       else {$('elapsed').textContent='0:00';$('duration').textContent='0:00';}
     }catch(e){}
   },500);
